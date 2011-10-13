@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <queue-entries>
   	<queue>
-	    <name>phoneWakeupsQueue</name>
+	    <name>deviceWakerQueue</name>
 	    <rate>1/s</rate>
 	    <mode>push</mode>
 	    <retry-parameters>

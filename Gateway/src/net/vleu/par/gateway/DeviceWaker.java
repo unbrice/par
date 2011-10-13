@@ -33,7 +33,7 @@ import com.google.appengine.api.urlfetch.HTTPRequest;
 import com.google.appengine.api.urlfetch.URLFetchService;
 import com.google.appengine.api.urlfetch.URLFetchServiceFactory;
 
-public class PhoneWaker {
+public class DeviceWaker {
 
     /** Gets the password from net/vleu/par/gateway/secrets.properties */
     private static String readC2dmAuthToken() throws MissingResourceException {
@@ -50,14 +50,14 @@ public class PhoneWaker {
     /** Used to perform the requests to Google C2DM */
     private final URLFetchService urlFetchService;
 
-    public PhoneWaker() {
+    public DeviceWaker() {
         this(DatastoreServiceFactory.getDatastoreService(),
                 new C2dmRequestFactory(readC2dmAuthToken()),
                 URLFetchServiceFactory.getURLFetchService());
     }
 
     /** Allows for injecting the private fields, for testing purposes */
-    PhoneWaker(final DatastoreService datastore,
+    DeviceWaker(final DatastoreService datastore,
             final C2dmRequestFactory requestFactory,
             final URLFetchService urlFetchService) {
         this.datastore = datastore;

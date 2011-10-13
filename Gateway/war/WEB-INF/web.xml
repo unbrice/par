@@ -5,12 +5,12 @@
 http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
 	version="2.5">
 	<servlet>
-		<servlet-name>PhoneWaker</servlet-name>
-		<servlet-class>net.vleu.par.gateway.PhoneWakerServlet</servlet-class>
+		<servlet-name>DeviceWaker</servlet-name>
+		<servlet-class>net.vleu.par.gateway.DeviceWakerServlet</servlet-class>
 	</servlet>
 	<servlet-mapping>
-		<servlet-name>PhoneWaker</servlet-name>
-		<url-pattern>/_ah/queue/phoneWakeupsQueue</url-pattern>
+		<servlet-name>DeviceWaker</servlet-name>
+		<url-pattern>/_ah/queue/deviceWakerQueue</url-pattern>
 	</servlet-mapping>
 
 	<security-constraint>

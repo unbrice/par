@@ -28,8 +28,8 @@ import net.vleu.par.gateway.models.DeviceId;
 import com.google.appengine.api.datastore.EntityNotFoundException;
 
 @SuppressWarnings("serial")
-public class PhoneWakerServlet extends HttpServlet {
-    public static final String APPENGINE_QUEUE_NAME = "phoneWakeupsQueue";
+public class DeviceWakerServlet extends HttpServlet {
+    public static final String APPENGINE_QUEUE_NAME = "deviceWakerQueue";
     /** Name of the HTTP parameter containing the Device ID */
     public static final String DEVICE_ID_HTTP_PARAM = "deviceId";
     /** HTTP error code 400 */
@@ -38,15 +38,15 @@ public class PhoneWakerServlet extends HttpServlet {
     private static final int HTTP_FORBIDDEN_STATUS = 403;
     /** HTTP error code 410 */
     private static final int HTTP_GONE_STATUS = 410;
-    private final PhoneWaker phoneWaker;
+    private final DeviceWaker deviceWaker;
 
-    public PhoneWakerServlet() {
-        this(new PhoneWaker());
+    public DeviceWakerServlet() {
+        this(new DeviceWaker());
     }
 
     /** Allows for injecting the private fields, for testing purposes */
-    PhoneWakerServlet(final PhoneWaker phoneWaker) {
-        this.phoneWaker = phoneWaker;
+    DeviceWakerServlet(final DeviceWaker deviceWaker) {
+        this.deviceWaker = deviceWaker;
     }
 
     /** @inherit */
@@ -68,7 +68,7 @@ public class PhoneWakerServlet extends HttpServlet {
         }
         deviceId = DeviceId.fromBase64(base64DeviceId);
         try {
-            this.phoneWaker.wake(deviceId);
+            this.deviceWaker.wake(deviceId);
         }
         catch (final EntityNotFoundException e) {
             resp.sendError(HTTP_GONE_STATUS, "Unknown device: "
