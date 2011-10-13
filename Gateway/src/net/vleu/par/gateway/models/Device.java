@@ -17,28 +17,17 @@
 package net.vleu.par.gateway.models;
 
 public final class Device {
-    private long c2dmDelay;
-    private long c2dmDelayReset;
+    /** Access token for using C2DM with this device */
     private String c2dmRegistrationId;
     private final DeviceId id;
-    private String sharedSecret;
+    /** As per {@link com.google.appengine.api.users.User#getUserId()} */
+    public final String owner;
 
-    public Device(final DeviceId id, final long c2dmDelay,
-            final long c2dmDelayReset, final String c2dmRegistrationId,
-            final String sharedSecret) {
+    public Device(final DeviceId id, final String c2dmRegistrationId,
+            final String owner) {
         this.id = id;
-        this.c2dmDelay = c2dmDelay;
-        this.c2dmDelayReset = c2dmDelayReset;
         this.c2dmRegistrationId = c2dmRegistrationId;
-        this.sharedSecret = sharedSecret;
-    }
-
-    public long getC2dmDelay() {
-        return this.c2dmDelay;
-    }
-
-    public long getC2dmDelayReset() {
-        return this.c2dmDelayReset;
+        this.owner = owner;
     }
 
     public String getC2dmRegistrationId() {
@@ -49,23 +38,15 @@ public final class Device {
         return this.id;
     }
 
-    public String getSharedSecret() {
-        return this.sharedSecret;
-    }
-
-    public void setC2dmDelay(final long c2dmDelay) {
-        this.c2dmDelay = c2dmDelay;
-    }
-
-    public void setC2dmDelayReset(final long c2dmDelayReset) {
-        this.c2dmDelayReset = c2dmDelayReset;
+    /**
+     * @return the User Id as per
+     *         {@link com.google.appengine.api.users.User#getUserId()}
+     */
+    public String getOwner() {
+        return this.owner;
     }
 
     public void setC2dmRegistrationId(final String c2dmRegistrationId) {
         this.c2dmRegistrationId = c2dmRegistrationId;
-    }
-
-    public void setSharedSecret(final String sharedSecret) {
-        this.sharedSecret = sharedSecret;
     }
 }

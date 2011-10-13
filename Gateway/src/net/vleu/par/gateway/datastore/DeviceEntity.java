@@ -26,35 +26,26 @@ import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 
 public abstract class DeviceEntity {
-    public static final String C2DM_DELAY_PROPERTY = "c2dmDelay";
-    public static final String C2DM_DELAY_RESET_PROPERTY = "c2dmDelay";
     public static final String C2DM_REGISTRATION_ID_PROPERTY =
             "c2dmRegistrationId";
     public static final String KIND = "Device";
-    public static final String SHARED_SECRET_PROPERTY = "sharedSecret";
+    public static final String OWNER_PROPERTY = "owner";
 
     private static Device deviceFromEntity(final Entity entity) {
         final DeviceId id = new DeviceId(entity.getKey().getId());
-        final long c2dmDelay = (Long) entity.getProperty(C2DM_DELAY_PROPERTY);
-        final long c2dmDelayReset =
-                (Long) entity.getProperty(C2DM_DELAY_RESET_PROPERTY);
         final String c2dmRegistrationId =
                 (String) entity.getProperty(C2DM_REGISTRATION_ID_PROPERTY);
-        final String sharedSecret =
-                (String) entity.getProperty(SHARED_SECRET_PROPERTY);
-        return new Device(id, c2dmDelay, c2dmDelayReset, c2dmRegistrationId,
-                sharedSecret);
+        final String owner =
+                (String) entity.getProperty(OWNER_PROPERTY);
+        return new Device(id, c2dmRegistrationId, owner);
     }
 
     public static Entity entityFromDevice(final Device device) {
         final Entity res = new Entity(KIND, device.getId().asLong);
-        res.setUnindexedProperty(C2DM_DELAY_PROPERTY, device.getC2dmDelay());
-        res.setUnindexedProperty(C2DM_DELAY_RESET_PROPERTY,
-                device.getC2dmDelayReset());
         res.setUnindexedProperty(C2DM_REGISTRATION_ID_PROPERTY,
                 device.getC2dmRegistrationId());
-        res.setUnindexedProperty(SHARED_SECRET_PROPERTY,
-                device.getSharedSecret());
+        res.setUnindexedProperty(OWNER_PROPERTY,
+                device.getOwner());
         return res;
     }
 
