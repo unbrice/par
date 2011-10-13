@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<queue-entries>
+  	<queue>
+	    <name>phoneWakeupsQueue</name>
+	    <rate>1/s</rate>
+	    <mode>push</mode>
+	    <retry-parameters>
+	    	<min-backoff-seconds>60</min-backoff-seconds> 
+	    	<max-backoff-seconds>3600</max-backoff-seconds>
+	      	<task-age-limit>1d</task-age-limit>
+    	</retry-parameters>
+  	</queue>
+</queue-entries>
