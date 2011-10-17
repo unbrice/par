@@ -20,16 +20,13 @@ public final class Device {
     /** Access token for using C2DM with this device */
     private String c2dmRegistrationId;
     private final DeviceId id;
-    /** As per {@link com.google.appengine.api.users.User#getUserId()} */
-    public final String owner;
 
-    public Device(final DeviceId id, final String c2dmRegistrationId,
-            final String owner) {
+    public Device(final DeviceId id, final String c2dmRegistrationId) {
         this.id = id;
         this.c2dmRegistrationId = c2dmRegistrationId;
-        this.owner = owner;
     }
 
+    /** @return access token for using C2DM with this device */
     public String getC2dmRegistrationId() {
         return this.c2dmRegistrationId;
     }
@@ -39,13 +36,11 @@ public final class Device {
     }
 
     /**
-     * @return the User Id as per
-     *         {@link com.google.appengine.api.users.User#getUserId()}
+     * Sets the access token for using C2DM with this device
+     * 
+     * @param c2dmRegistrationId
+     *            Access token for using C2DM with this device
      */
-    public String getOwner() {
-        return this.owner;
-    }
-
     public void setC2dmRegistrationId(final String c2dmRegistrationId) {
         this.c2dmRegistrationId = c2dmRegistrationId;
     }

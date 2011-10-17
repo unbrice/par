@@ -24,12 +24,16 @@ import java.util.ResourceBundle;
 import net.vleu.par.gateway.datastore.DeviceEntity;
 import net.vleu.par.gateway.models.Device;
 import net.vleu.par.gateway.models.DeviceId;
+import net.vleu.par.gateway.models.UserId;
 import net.vleu.par.utils.C2dmRequestFactory;
 
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
+import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.EntityNotFoundException;
+import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.urlfetch.HTTPRequest;
+import com.google.appengine.api.urlfetch.HTTPResponse;
 import com.google.appengine.api.urlfetch.URLFetchService;
 import com.google.appengine.api.urlfetch.URLFetchServiceFactory;
 
@@ -72,12 +76,17 @@ public class DeviceWaker {
      *            The device to wake up.
      * @throws EntityNotFoundException
      */
-    public void wake(final DeviceId deviceId) throws IOException,
-            EntityNotFoundException {
-        final Device device = DeviceEntity.getDevice(this.datastore, deviceId);
+    public void wake(final UserId ownerId, final DeviceId deviceId)
+            throws IOException, EntityNotFoundException {
+        final Key deviceKey = DeviceEntity.keyForIds(ownerId, deviceId);
+        final Entity deviceEntity = this.datastore.get(deviceKey);
+        final Device device = DeviceEntity.deviceFromEntity(deviceEntity);
         final String c2dmRegistrationId = device.getC2dmRegistrationId();
         final HTTPRequest request =
                 this.requestFactory.buildRequest(c2dmRegistrationId);
-        this.urlFetchService.fetchAsync(request);
+        final HTTPResponse response = this.urlFetchService.fetch(request);
+        if (response.getResponseCode() != 200)
+            throw new IOException("The C2DM server anwsered a "
+                + response.getResponseCode() + " error.");
     }
 }

@@ -18,45 +18,41 @@ package net.vleu.par.gateway.datastore;
 
 import net.vleu.par.gateway.models.Device;
 import net.vleu.par.gateway.models.DeviceId;
+import net.vleu.par.gateway.models.UserId;
 
-import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.appengine.api.datastore.Key;
-import com.google.appengine.api.datastore.KeyFactory;
+import com.google.appengine.api.datastore.Query;
 
 public abstract class DeviceEntity {
     public static final String C2DM_REGISTRATION_ID_PROPERTY =
             "c2dmRegistrationId";
     public static final String KIND = "Device";
-    public static final String OWNER_PROPERTY = "owner";
 
-    private static Device deviceFromEntity(final Entity entity) {
+    static Query buildQueryForOwnedDevices(final UserId ownerId) {
+        final Key parentKey = UserEntity.keyForId(ownerId);
+        return new Query(KIND, parentKey);
+    }
+
+    public static Device deviceFromEntity(final Entity entity) {
         final DeviceId id = new DeviceId(entity.getKey().getId());
         final String c2dmRegistrationId =
                 (String) entity.getProperty(C2DM_REGISTRATION_ID_PROPERTY);
-        final String owner =
-                (String) entity.getProperty(OWNER_PROPERTY);
-        return new Device(id, c2dmRegistrationId, owner);
+        return new Device(id, c2dmRegistrationId);
     }
 
-    public static Entity entityFromDevice(final Device device) {
-        final Entity res = new Entity(KIND, device.getId().asLong);
+    public static Entity entityFromDevice(final UserId ownerId,
+            final Device device) {
+        final DeviceId deviceId = device.getId();
+        final Key ownerKey = UserEntity.keyForId(ownerId);
+        final Entity res = new Entity(KIND, deviceId.asLong, ownerKey);
         res.setUnindexedProperty(C2DM_REGISTRATION_ID_PROPERTY,
                 device.getC2dmRegistrationId());
-        res.setUnindexedProperty(OWNER_PROPERTY,
-                device.getOwner());
         return res;
     }
 
-    public static Device getDevice(final DatastoreService datastore,
-            final DeviceId deviceId) throws EntityNotFoundException {
-        final Entity entity;
-        entity = datastore.get(keyForDeviceId(deviceId));
-        return deviceFromEntity(entity);
-    }
-
-    private static Key keyForDeviceId(final DeviceId deviceId) {
-        return KeyFactory.createKey(KIND, deviceId.asLong);
+    public static Key keyForIds(final UserId ownerId, final DeviceId deviceId) {
+        final Key parentKey = UserEntity.keyForId(ownerId);
+        return parentKey.getChild(KIND, deviceId.asLong);
     }
 }

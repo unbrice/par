@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import net.vleu.par.gateway.models.DeviceId;
+import net.vleu.par.gateway.models.UserId;
 
 import com.google.appengine.api.datastore.EntityNotFoundException;
 
@@ -32,12 +33,8 @@ public class DeviceWakerServlet extends HttpServlet {
     public static final String APPENGINE_QUEUE_NAME = "deviceWakerQueue";
     /** Name of the HTTP parameter containing the Device ID */
     public static final String DEVICE_ID_HTTP_PARAM = "deviceId";
-    /** HTTP error code 400 */
-    private static final int HTTP_BAD_REQUEST_STATUS = 400;
-    /** HTTP error code 403 */
-    private static final int HTTP_FORBIDDEN_STATUS = 403;
-    /** HTTP error code 410 */
-    private static final int HTTP_GONE_STATUS = 410;
+    /** Name of the HTTP parameter containing the User ID */
+    public static final String USER_ID_HTTP_PARAM = "userId";
     private final DeviceWaker deviceWaker;
 
     public DeviceWakerServlet() {
@@ -54,24 +51,35 @@ public class DeviceWakerServlet extends HttpServlet {
     public void doGet(final HttpServletRequest req,
             final HttpServletResponse resp) throws IOException {
         final DeviceId deviceId;
+        final UserId userId;
         final String base64DeviceId = req.getParameter(DEVICE_ID_HTTP_PARAM);
+        final String stringUserId = req.getParameter(USER_ID_HTTP_PARAM);
 
-        /* Validate the request */
+        /* Validates the request */
         if (base64DeviceId == null) {
-            resp.sendError(HTTP_BAD_REQUEST_STATUS, "No device parameter");
+            resp.sendError(HTTPCodes.HTTP_BAD_REQUEST_STATUS,
+                    "No deviceId parameter");
+            return;
+        }
+        else if (stringUserId == null) {
+            resp.sendError(HTTPCodes.HTTP_BAD_REQUEST_STATUS,
+                    "No userId parameter");
             return;
         }
         else if (req.getHeader("X-AppEngine-QueueName") == null) {
-            resp.sendError(HTTP_FORBIDDEN_STATUS,
+            resp.sendError(HTTPCodes.HTTP_FORBIDDEN_STATUS,
                     "Requests must be made through a Queue");
             return;
         }
+
+        /* Wakeups the device */
         deviceId = DeviceId.fromBase64(base64DeviceId);
+        userId = UserId.fromGoogleAuthId(stringUserId);
         try {
-            this.deviceWaker.wake(deviceId);
+            this.deviceWaker.wake(userId, deviceId);
         }
         catch (final EntityNotFoundException e) {
-            resp.sendError(HTTP_GONE_STATUS, "Unknown device: "
+            resp.sendError(HTTPCodes.HTTP_GONE_STATUS, "Unknown device: "
                 + base64DeviceId);
             return;
         }
