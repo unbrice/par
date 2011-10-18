@@ -1,0 +1,56 @@
+/*
+ * Copyright ©2011 Brice Arnould
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package net.vleu.par;
+
+// This file relies on plugins to generate service code.
+option cc_generic_services = false;
+option java_generic_services = false;
+option py_generic_services = false;
+
+option optimize_for = LITE_RUNTIME;
+
+/* This message defines only one of its optional fields, to identify
+ * a device.
+ */
+message DeviceID
+{
+	/* A  64-bit number that is randomly generated on the device's first
+	 * boot and should remain constant for the lifetime of the device
+	 * android.provider.Settings.Secure.ANDROID_ID
+	 */
+	optional fixed64 android_id = 1;
+
+	/* As per android.telephony.TelephonyManager.getDeviceId()
+	 * "International Mobile Equipment Identity", for GSM phones, as per
+	 * http://en.wikipedia.org/wiki/International_Mobile_Equipment_Identity#Structure_of_the_IMEI_and_IMEISV_.28IMEI_Software_Version.29
+	 * 16 decimal digits, that is 54 bits
+	 */
+	optional uint64 telephony_emei = 2;
+
+	/* As per android.telephony.TelephonyManager.getDeviceId()
+	 * "Mobile Equipment IDentifier", for CDMA phones, as per
+	 * http://en.wikipedia.org/wiki/Mobile_Equipment_Identifier
+	 * 14 hex digits, that is 56 bits
+	 */
+	optional uint64 telephony_meid = 3;
+
+	/* The WiFi MAC address.
+	 * 12 hex digits, that is 48 bits.
+	 */
+	optional uint64 wifi_mac = 4;
+}
