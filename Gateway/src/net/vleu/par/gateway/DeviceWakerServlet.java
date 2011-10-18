@@ -33,8 +33,8 @@ public class DeviceWakerServlet extends HttpServlet {
     public static final String APPENGINE_QUEUE_NAME = "deviceWakerQueue";
     /** Name of the HTTP parameter containing the Device ID */
     public static final String DEVICE_ID_HTTP_PARAM = "deviceId";
-    /** Name of the HTTP parameter containing the User ID
-     * as a Base64 URL string
+    /**
+     * Name of the HTTP parameter containing the User ID as a Base64 URL string
      */
     public static final String USER_ID_HTTP_PARAM = "userId";
     private final DeviceWaker deviceWaker;
@@ -59,13 +59,13 @@ public class DeviceWakerServlet extends HttpServlet {
 
         /* Validates the request */
         if (base64urlDeviceId == null) {
-            resp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS,
-                    "No deviceId parameter");
+            resp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS, "No "
+                + DEVICE_ID_HTTP_PARAM + " parameter");
             return;
         }
         else if (stringUserId == null) {
-            resp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS,
-                    "No userId parameter");
+            resp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS, "No "
+                + USER_ID_HTTP_PARAM + " parameter");
             return;
         }
         else if (req.getHeader("X-AppEngine-QueueName") == null) {

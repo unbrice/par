@@ -72,6 +72,8 @@ public class DeviceWaker {
     /**
      * Calls Google's C2DM platform for the device whose ID is specified.
      * 
+     * @param ownerId
+     *            The user who registered the device
      * @param deviceId
      *            The device to wake up.
      * @throws EntityNotFoundException
