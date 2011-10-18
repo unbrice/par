@@ -19,7 +19,7 @@ package net.vleu.par.gateway;
 /**
  * Non-instatiable class representing HTTP constants.
  */
-final class HTTPCodes {
+final class HttpCodes {
     /** HTTP error code 400 */
     public static final int HTTP_BAD_REQUEST_STATUS = 400;
     /** HTTP error code 403 */
@@ -27,7 +27,7 @@ final class HTTPCodes {
     /** HTTP error code 410 */
     public static final int HTTP_GONE_STATUS = 410;
 
-    private HTTPCodes() {
+    private HttpCodes() {
 
     }
 }

@@ -59,17 +59,17 @@ public class DeviceWakerServlet extends HttpServlet {
 
         /* Validates the request */
         if (base64urlDeviceId == null) {
-            resp.sendError(HTTPCodes.HTTP_BAD_REQUEST_STATUS,
+            resp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS,
                     "No deviceId parameter");
             return;
         }
         else if (stringUserId == null) {
-            resp.sendError(HTTPCodes.HTTP_BAD_REQUEST_STATUS,
+            resp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS,
                     "No userId parameter");
             return;
         }
         else if (req.getHeader("X-AppEngine-QueueName") == null) {
-            resp.sendError(HTTPCodes.HTTP_FORBIDDEN_STATUS,
+            resp.sendError(HttpCodes.HTTP_FORBIDDEN_STATUS,
                     "Requests must be made through a Queue");
             return;
         }
@@ -81,7 +81,7 @@ public class DeviceWakerServlet extends HttpServlet {
             this.deviceWaker.wake(userId, deviceId);
         }
         catch (final EntityNotFoundException e) {
-            resp.sendError(HTTPCodes.HTTP_GONE_STATUS, "Unknown device: "
+            resp.sendError(HttpCodes.HTTP_GONE_STATUS, "Unknown device: "
                 + base64urlDeviceId);
             return;
         }
