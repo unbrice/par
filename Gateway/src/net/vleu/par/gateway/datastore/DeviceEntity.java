@@ -35,7 +35,7 @@ public abstract class DeviceEntity {
     }
 
     public static Device deviceFromEntity(final Entity entity) {
-        final DeviceId id = new DeviceId(entity.getKey().getId());
+        final DeviceId id = DeviceId.fromBase64url(entity.getKey().getName());
         final String c2dmRegistrationId =
                 (String) entity.getProperty(C2DM_REGISTRATION_ID_PROPERTY);
         return new Device(id, c2dmRegistrationId);
@@ -45,7 +45,7 @@ public abstract class DeviceEntity {
             final Device device) {
         final DeviceId deviceId = device.getId();
         final Key ownerKey = UserEntity.keyForId(ownerId);
-        final Entity res = new Entity(KIND, deviceId.asLong, ownerKey);
+        final Entity res = new Entity(KIND, deviceId.toBase64url(), ownerKey);
         res.setUnindexedProperty(C2DM_REGISTRATION_ID_PROPERTY,
                 device.getC2dmRegistrationId());
         return res;
@@ -53,6 +53,6 @@ public abstract class DeviceEntity {
 
     public static Key keyForIds(final UserId ownerId, final DeviceId deviceId) {
         final Key parentKey = UserEntity.keyForId(ownerId);
-        return parentKey.getChild(KIND, deviceId.asLong);
+        return parentKey.getChild(KIND, deviceId.toBase64url());
     }
 }

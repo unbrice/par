@@ -20,14 +20,15 @@ package biz.source_code.base64Coder;
 * A Base64 encoder/decoder.
 *
 * <p>
-* This class is used to encode and decode data in Base64 format as described in RFC 1521.
+* This class is used to encode and decode data in Base64 format, URL variant,
+* as described in RFC 4648.
 *
 * <p>
 * Project home page: <a href="http://www.source-code.biz/base64coder/java/">www.source-code.biz/base64coder/java</a><br>
 * Author: Christian d'Heureuse, Inventec Informatik AG, Zurich, Switzerland<br>
 * Multi-licensed: EPL / LGPL / GPL / AL / BSD / MIT.
 */
-public class Base64Coder {
+public class Base64UrlCoder {
 
 // The line separator string of the operating system.
 private static final String systemLineSeparator = System.getProperty("line.separator");
@@ -39,7 +40,7 @@ private static final char[] map1 = new char[64];
       for (char c='A'; c<='Z'; c++) map1[i++] = c;
       for (char c='a'; c<='z'; c++) map1[i++] = c;
       for (char c='0'; c<='9'; c++) map1[i++] = c;
-      map1[i++] = '+'; map1[i++] = '/'; }
+      map1[i++] = '-'; map1[i++] = '_'; }
 
 // Mapping table from Base64 characters to 6-bit nibbles.
 private static final byte[] map2 = new byte[128];
@@ -222,6 +223,6 @@ public static byte[] decode (char[] in, int iOff, int iLen) {
    return out; }
 
 // Dummy constructor.
-private Base64Coder() {}
+private Base64UrlCoder() {}
 
-} // end class Base64Coder
+} // end class Base64UrlCoder

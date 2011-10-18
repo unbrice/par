@@ -33,7 +33,9 @@ public class DeviceWakerServlet extends HttpServlet {
     public static final String APPENGINE_QUEUE_NAME = "deviceWakerQueue";
     /** Name of the HTTP parameter containing the Device ID */
     public static final String DEVICE_ID_HTTP_PARAM = "deviceId";
-    /** Name of the HTTP parameter containing the User ID */
+    /** Name of the HTTP parameter containing the User ID
+     * as a Base64 URL string
+     */
     public static final String USER_ID_HTTP_PARAM = "userId";
     private final DeviceWaker deviceWaker;
 
@@ -52,11 +54,11 @@ public class DeviceWakerServlet extends HttpServlet {
             final HttpServletResponse resp) throws IOException {
         final DeviceId deviceId;
         final UserId userId;
-        final String base64DeviceId = req.getParameter(DEVICE_ID_HTTP_PARAM);
+        final String base64urlDeviceId = req.getParameter(DEVICE_ID_HTTP_PARAM);
         final String stringUserId = req.getParameter(USER_ID_HTTP_PARAM);
 
         /* Validates the request */
-        if (base64DeviceId == null) {
+        if (base64urlDeviceId == null) {
             resp.sendError(HTTPCodes.HTTP_BAD_REQUEST_STATUS,
                     "No deviceId parameter");
             return;
@@ -73,14 +75,14 @@ public class DeviceWakerServlet extends HttpServlet {
         }
 
         /* Wakeups the device */
-        deviceId = DeviceId.fromBase64(base64DeviceId);
+        deviceId = DeviceId.fromBase64url(base64urlDeviceId);
         userId = UserId.fromGoogleAuthId(stringUserId);
         try {
             this.deviceWaker.wake(userId, deviceId);
         }
         catch (final EntityNotFoundException e) {
             resp.sendError(HTTPCodes.HTTP_GONE_STATUS, "Unknown device: "
-                + base64DeviceId);
+                + base64urlDeviceId);
             return;
         }
         resp.setContentType("text/plain");

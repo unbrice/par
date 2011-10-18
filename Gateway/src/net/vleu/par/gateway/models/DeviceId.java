@@ -16,34 +16,38 @@
  */
 package net.vleu.par.gateway.models;
 
-import java.math.BigInteger;
-
-import biz.source_code.base64Coder.Base64Coder;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class DeviceId implements Comparable<DeviceId> {
-    public static final int BASE64_RESERVED_FIRST_BITS = 8;
-    private static final int BASE64_TOTAL_BYTES = 9;
-
-    private static final BigInteger MIN_LONG_AS_BIGINT = BigInteger
-            .valueOf(Long.MIN_VALUE);
-
-    /** Does the reverse of toBase64 */
-    public static DeviceId fromBase64(final String str) {
-        final byte[] array = Base64Coder.decode(str);
-        BigInteger bigInt = new BigInteger(1, array);
-        bigInt = bigInt.add(MIN_LONG_AS_BIGINT);
-        return new DeviceId(bigInt.longValue());
+    /**
+     * Does the reverse of {@link #toBase64url()}
+     * 
+     * @param base64Str
+     *            the ID in Base64, URL variant, as per RFC4648.
+     * @return An opaque object representing the DeviceId
+     */
+    public static DeviceId fromBase64url(final String base64Str) {
+        return new DeviceId(base64Str);
     }
 
-    public final long asLong;
+    /**
+     * This String has been interned as per {@link String#intern()}. It is
+     * encoded in base64, URL variant, as per RFC4648
+     */
+    private final String asBase64url;
 
-    public DeviceId(final long idAsLong) {
-        this.asLong = idAsLong;
+    private final Pattern BASE64URL_WHITELIST = Pattern
+            .compile("[a-zA-Z0-9\\-_]*");
+
+    private DeviceId(final String idAsLong) {
+        throwIfInvalidBase64url(idAsLong);
+        this.asBase64url = idAsLong.intern();
     }
 
     @Override
     public int compareTo(final DeviceId other) {
-        return Long.signum(this.asLong - other.asLong);
+        return this.asBase64url.compareTo(other.asBase64url);
     }
 
     @Override
@@ -52,40 +56,43 @@ public final class DeviceId implements Comparable<DeviceId> {
             return false;
         else {
             final DeviceId otherAsDevice = (DeviceId) other;
-            return this.asLong == otherAsDevice.asLong;
+            /* This is OK because both strings are interned */
+            return this.asBase64url == otherAsDevice.asBase64url;
         }
     }
 
     @Override
     public int hashCode() {
-        return ((Long) this.asLong).hashCode();
+        /*
+         * In theory, this could be optimized by taking the pointer's address,
+         * since the string is interned. However, String.hashcode() cache the
+         * hash anyway
+         */
+        return this.asBase64url.hashCode();
+    }
+
+    private void throwIfInvalidBase64url(final String str)
+            throws IllegalArgumentException {
+        // TODO: Validate str by cheking it is a valid PB representation
+        final Matcher matcher = this.BASE64URL_WHITELIST.matcher(str);
+        if (matcher.matches())
+            throw new IllegalArgumentException("Invalid base64url:" + str);
     }
 
     /**
-     * Encodes the ID in Base64, padded to 12 characters. The first character is
-     * always 'A'. This serves as as kind of 'version number'.
+     * Does the reverse of {@link #fromBase64url(String)}
+     * 
+     * @return the ID in Base64, URL variant, as per RFC4648
      */
-    public String toBase64() {
-        final byte[] bytes = value().toByteArray();
-        // Prepend 0 bytes so that there are BASE64_TOTAL_BYTES bytes
-        final byte[] paddedBytes = new byte[BASE64_TOTAL_BYTES];
-        final int missingBytes = BASE64_TOTAL_BYTES - bytes.length;
-        assert (missingBytes >= 0);
-        for (int n = 0; n < bytes.length; ++n)
-            paddedBytes[missingBytes + n] = bytes[n];
-        return String.valueOf(Base64Coder.encode(paddedBytes));
+    public String toBase64url() {
+        return this.asBase64url;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
-        return "DeviceId:" + value().toString();
-    }
-
-    /**
-     * @return The Device ID as a positive 64-bit number.
-     */
-    public final BigInteger value() {
-        final BigInteger asBigInt = BigInteger.valueOf(this.asLong);
-        return asBigInt.subtract(MIN_LONG_AS_BIGINT);
+        return "DeviceId:" + toBase64url();
     }
 }
