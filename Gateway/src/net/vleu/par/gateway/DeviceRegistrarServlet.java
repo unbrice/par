@@ -29,32 +29,32 @@ import com.google.appengine.api.users.UserServiceFactory;
 
 @SuppressWarnings("serial")
 public class DeviceRegistrarServlet extends HttpServlet {
+    /** Name of the HTTP parameter containing the Device ID */
+    public static final String DEVICE_ID_HTTP_PARAM = "deviceId";
 
-    private final UserService userService;
+    private final ServletHelper servletHelper;
 
     public DeviceRegistrarServlet() {
-        this(UserServiceFactory.getUserService());
+        this(new ServletHelper());
     }
 
     /** For dependency-injection during tests */
-    DeviceRegistrarServlet(final UserService userService) {
-        this.userService = userService;
+    DeviceRegistrarServlet(final ServletHelper servletHelper) {
+        this.servletHelper = servletHelper;
     }
 
     /** @inherit */
     @Override
     public void doGet(final HttpServletRequest req,
             final HttpServletResponse resp) throws IOException {
-        final com.google.appengine.api.users.User googleUser =
-                this.userService.getCurrentUser();
-        if (googleUser == null) {
-            resp.sendError(HTTPCodes.HTTP_FORBIDDEN_STATUS,
+        final UserId userId =
+                this.servletHelper.getCurrentUser();
+        if (userId == null) {
+            resp.sendError(HttpCodes.HTTP_FORBIDDEN_STATUS,
                     "Requests must be authenticated");
             return;
         }
-        final String googleAuthId =
-                this.userService.getCurrentUser().getUserId();
-        final UserId userId = UserId.fromGoogleAuthId(googleAuthId);
-
+        final String base64urlDeviceId = req.getParameter(DEVICE_ID_HTTP_PARAM);
+        
     }
 }
