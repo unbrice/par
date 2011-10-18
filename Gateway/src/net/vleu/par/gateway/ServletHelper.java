@@ -16,17 +16,17 @@
  */
 package net.vleu.par.gateway;
 
+import net.vleu.par.gateway.models.UserId;
+
 import com.google.appengine.api.users.UserService;
 import com.google.appengine.api.users.UserServiceFactory;
-
-import net.vleu.par.gateway.models.UserId;
 
 /**
  * A collection of utility functions shared among Servlets
  */
 final class ServletHelper {
     private final UserService userService;
-    
+
     public ServletHelper() {
         this(UserServiceFactory.getUserService());
     }
@@ -35,9 +35,8 @@ final class ServletHelper {
     ServletHelper(final UserService userService) {
         this.userService = userService;
     }
-    
-    public UserId getCurrentUser()
-    {
+
+    public synchronized UserId getCurrentUser() {
         final com.google.appengine.api.users.User googleUser =
                 this.userService.getCurrentUser();
         if (googleUser == null)

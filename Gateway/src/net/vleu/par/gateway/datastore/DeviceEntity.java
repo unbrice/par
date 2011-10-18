@@ -43,9 +43,8 @@ public abstract class DeviceEntity {
 
     public static Entity entityFromDevice(final UserId ownerId,
             final Device device) {
-        final DeviceId deviceId = device.getId();
-        final Key ownerKey = UserEntity.keyForId(ownerId);
-        final Entity res = new Entity(KIND, deviceId.toBase64url(), ownerKey);
+        final Key deviceKey = keyForIds(ownerId, device.getId());
+        final Entity res = new Entity(KIND, deviceKey.getName(), deviceKey.getParent());
         res.setUnindexedProperty(C2DM_REGISTRATION_ID_PROPERTY,
                 device.getC2dmRegistrationId());
         return res;
