@@ -29,26 +29,25 @@ public final class DeviceEntity {
             "c2dmRegistrationId";
     public static final String KIND = "Device";
 
-    private DeviceEntity()
-    {
-    }
-    
     static Query buildQueryForOwnedDevices(final UserId ownerId) {
         final Key parentKey = UserEntity.keyForId(ownerId);
         return new Query(KIND, parentKey);
     }
 
     public static Device deviceFromEntity(final Entity entity) {
-        final DeviceId id = DeviceId.fromBase64url(entity.getKey().getName());
         final String c2dmRegistrationId =
                 (String) entity.getProperty(C2DM_REGISTRATION_ID_PROPERTY);
+        final DeviceId id =
+                DeviceId.fromBase64urlWithNoVerifications(entity.getKey()
+                        .getName());
         return new Device(id, c2dmRegistrationId);
     }
 
     public static Entity entityFromDevice(final UserId ownerId,
             final Device device) {
         final Key deviceKey = keyForIds(ownerId, device.getId());
-        final Entity res = new Entity(KIND, deviceKey.getName(), deviceKey.getParent());
+        final Entity res =
+                new Entity(KIND, deviceKey.getName(), deviceKey.getParent());
         res.setUnindexedProperty(C2DM_REGISTRATION_ID_PROPERTY,
                 device.getC2dmRegistrationId());
         return res;
@@ -57,5 +56,8 @@ public final class DeviceEntity {
     public static Key keyForIds(final UserId ownerId, final DeviceId deviceId) {
         final Key parentKey = UserEntity.keyForId(ownerId);
         return parentKey.getChild(KIND, deviceId.toBase64url());
+    }
+
+    private DeviceEntity() {
     }
 }

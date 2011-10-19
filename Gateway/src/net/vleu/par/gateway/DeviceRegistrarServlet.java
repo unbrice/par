@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import net.vleu.par.gateway.models.DeviceId;
 import net.vleu.par.gateway.models.UserId;
+import net.vleu.par.gateway.models.DeviceId.InvalidDeviceIdSerialisation;
 
 @SuppressWarnings("serial")
 public class DeviceRegistrarServlet extends HttpServlet {
@@ -53,6 +54,7 @@ public class DeviceRegistrarServlet extends HttpServlet {
     public void doGet(final HttpServletRequest req,
             final HttpServletResponse resp) throws IOException {
         final UserId userId = this.servletHelper.getCurrentUser();
+        final DeviceId deviceId;
         if (userId == null) {
             resp.sendError(HttpCodes.HTTP_FORBIDDEN_STATUS,
                     "Requests must be authenticated");
@@ -71,7 +73,13 @@ public class DeviceRegistrarServlet extends HttpServlet {
                 + C2DM_REGISTRATION_ID_HTTP_PARAM + " parameter");
             return;
         }
-        this.deviceRegistrar.registerDevice(userId,
-                DeviceId.fromBase64url(base64urlDeviceId), c2dmRegistrationId);
+        try {
+            deviceId = DeviceId.fromBase64url(base64urlDeviceId);
+        }
+        catch (InvalidDeviceIdSerialisation e) {
+            resp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS, "Invalid "+ DEVICE_ID_HTTP_PARAM);
+            return;
+        }
+        this.deviceRegistrar.registerDevice(userId, deviceId, c2dmRegistrationId);
     }
 }

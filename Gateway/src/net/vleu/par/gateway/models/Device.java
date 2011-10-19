@@ -32,8 +32,7 @@ public final class Device {
             return false;
         else {
             final Device otherAsDevice = (Device) other;
-            return this.id.equals(otherAsDevice.id) 
-                && this.c2dmRegistrationId.equals(otherAsDevice.c2dmRegistrationId);
+            return this.id.equals(otherAsDevice.id) && this.c2dmRegistrationId.equals(otherAsDevice.c2dmRegistrationId);
         }
     }
 

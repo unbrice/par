@@ -38,7 +38,7 @@ public class DeviceEntityTest {
     private static final String C2DM_ID = "dummyC2DM";
 
     private static final DeviceId DEVICE_ID = DeviceId
-            .fromBase64url("dGVzdHN0cmluZw");
+            .fromBase64urlWithNoVerifications("CTJ5BgAAAAAA");
 
     private static final UserId USER_ID = UserId.fromGoogleAuthId("dummyUser");
 
@@ -98,7 +98,6 @@ public class DeviceEntityTest {
                 ds.get(DeviceEntity.keyForIds(USER_ID, DEVICE_ID));
         final Device device2 = DeviceEntity.deviceFromEntity(entity2);
         assertEquals(device1, device2);
-
     }
 
     /**

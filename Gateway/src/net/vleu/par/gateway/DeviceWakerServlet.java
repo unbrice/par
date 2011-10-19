@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import net.vleu.par.gateway.models.DeviceId;
+import net.vleu.par.gateway.models.DeviceId.InvalidDeviceIdSerialisation;
 import net.vleu.par.gateway.models.UserId;
 
 import com.google.appengine.api.datastore.EntityNotFoundException;
@@ -50,6 +51,7 @@ public class DeviceWakerServlet extends HttpServlet {
 
     /** @inherit */
     @Override
+    // TODO: Switch to ProtoRPC
     public void doGet(final HttpServletRequest req,
             final HttpServletResponse resp) throws IOException {
         final DeviceId deviceId;
@@ -75,7 +77,13 @@ public class DeviceWakerServlet extends HttpServlet {
         }
 
         /* Wakeups the device */
-        deviceId = DeviceId.fromBase64url(base64urlDeviceId);
+        try {
+            deviceId = DeviceId.fromBase64url(base64urlDeviceId);
+        }
+        catch (InvalidDeviceIdSerialisation e) {
+            resp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS, "Invalid "+ DEVICE_ID_HTTP_PARAM);
+            return;
+        }
         userId = UserId.fromGoogleAuthId(stringUserId);
         try {
             this.deviceWaker.wake(userId, deviceId);
