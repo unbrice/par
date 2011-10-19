@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.vleu.par;
+package net.vleu.par.protocolbuffer;
 
 // This file relies on plugins to generate service code.
 option cc_generic_services = false;
@@ -27,7 +27,7 @@ option optimize_for = LITE_RUNTIME;
 /* This message defines only one of its optional fields, to identify
  * a device.
  */
-message DeviceID
+message DeviceId
 {
 	/* A  64-bit number that is randomly generated on the device's first
 	 * boot and should remain constant for the lifetime of the device
