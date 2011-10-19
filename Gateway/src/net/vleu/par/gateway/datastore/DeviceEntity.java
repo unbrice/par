@@ -24,11 +24,15 @@ import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.Query;
 
-public abstract class DeviceEntity {
+public final class DeviceEntity {
     public static final String C2DM_REGISTRATION_ID_PROPERTY =
             "c2dmRegistrationId";
     public static final String KIND = "Device";
 
+    private DeviceEntity()
+    {
+    }
+    
     static Query buildQueryForOwnedDevices(final UserId ownerId) {
         final Key parentKey = UserEntity.keyForId(ownerId);
         return new Query(KIND, parentKey);

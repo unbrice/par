@@ -26,6 +26,17 @@ public final class Device {
         this.c2dmRegistrationId = c2dmRegistrationId;
     }
 
+    @Override
+    public boolean equals(final Object other) {
+        if ((other == null) || !(other instanceof Device))
+            return false;
+        else {
+            final Device otherAsDevice = (Device) other;
+            return this.id.equals(otherAsDevice.id) 
+                && this.c2dmRegistrationId.equals(otherAsDevice.c2dmRegistrationId);
+        }
+    }
+
     /** @return access token for using C2DM with this device */
     public String getC2dmRegistrationId() {
         return this.c2dmRegistrationId;
@@ -33,6 +44,11 @@ public final class Device {
 
     public DeviceId getId() {
         return this.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return this.id.hashCode();
     }
 
     /**

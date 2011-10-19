@@ -24,7 +24,7 @@ public final class DeviceId implements Comparable<DeviceId> {
      * Does the reverse of {@link #toBase64url()}
      * 
      * @param base64Str
-     *            the ID in Base64, URL variant, as per RFC4648.
+     *            the ID in Base64, URL variant with no padding, as per RFC4648.
      * @return An opaque object representing the DeviceId
      */
     public static DeviceId fromBase64url(final String base64Str) {
@@ -33,7 +33,7 @@ public final class DeviceId implements Comparable<DeviceId> {
 
     /**
      * This String has been interned as per {@link String#intern()}. It is
-     * encoded in base64, URL variant, as per RFC4648
+     * encoded in base64, URL variant with no padding, as per RFC4648
      */
     private final String asBase64url;
 
@@ -65,7 +65,7 @@ public final class DeviceId implements Comparable<DeviceId> {
     public int hashCode() {
         /*
          * In theory, this could be optimized by taking the pointer's address,
-         * since the string is interned. However, String.hashcode() cache the
+         * since the string is interned. However, String.hashcode() caches the
          * hash anyway
          */
         return this.asBase64url.hashCode();
@@ -75,14 +75,14 @@ public final class DeviceId implements Comparable<DeviceId> {
             throws IllegalArgumentException {
         // TODO: Validate str by cheking it is a valid PB representation
         final Matcher matcher = this.BASE64URL_WHITELIST.matcher(str);
-        if (matcher.matches())
+        if (!matcher.matches())
             throw new IllegalArgumentException("Invalid base64url:" + str);
     }
 
     /**
      * Does the reverse of {@link #fromBase64url(String)}
      * 
-     * @return the ID in Base64, URL variant, as per RFC4648
+     * @return the ID in Base64, URL variant with no padding, as per RFC4648
      */
     public String toBase64url() {
         return this.asBase64url;
