@@ -18,15 +18,15 @@ package net.vleu.par.gateway.models;
 
 import net.vleu.par.gateway.models.DeviceId.InvalidDeviceIdSerialisation;
 
-public final class Command {
-    private final net.vleu.par.protocolbuffer.Commands.Command.Builder proto;
+public final class Directive {
+    private final net.vleu.par.protocolbuffer.Commands.Directive.Builder proto;
 
-    public Command(final net.vleu.par.protocolbuffer.Commands.Command proto) {
+    public Directive(final net.vleu.par.protocolbuffer.Commands.Directive proto) {
         this.proto = proto.toBuilder();
     }
     
-    public Command() {
-        this.proto = net.vleu.par.protocolbuffer.Commands.Command.newBuilder();
+    public Directive() {
+        this.proto = net.vleu.par.protocolbuffer.Commands.Directive.newBuilder();
     }
 
     /** @return The DeviceId, null if missing or unparseable */

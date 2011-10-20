@@ -36,7 +36,7 @@ message StatusBarNotification {
 	optional string title = 2;
 }
 
-message Command {
+message Directive {
 	optional DeviceId device_id = 1;
 	optional uint64 expiration = 2;
 	optional string source = 32;
