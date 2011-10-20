@@ -27,7 +27,7 @@ option optimize_for = LITE_RUNTIME;
 /* This message defines only one of its optional fields, to identify
  * a device.
  */
-message DeviceId
+message DeviceIdData
 {
 	/* A  64-bit number that is randomly generated on the device's first
 	 * boot and should remain constant for the lifetime of the device

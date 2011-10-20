@@ -19,6 +19,7 @@ package net.vleu.par.gateway.models;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import net.vleu.par.protocolbuffer.Devices.DeviceIdData;
 import biz.source_code.base64Coder.Base64UrlCoder;
 
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -26,11 +27,17 @@ import com.google.protobuf.InvalidProtocolBufferException;
 public final class DeviceId implements Comparable<DeviceId> {
     @SuppressWarnings("serial")
     public static class InvalidDeviceIdSerialisation extends Exception {
-        private final net.vleu.par.protocolbuffer.Devices.DeviceId invalidProto;
+        private final DeviceIdData invalidProto;
 
         private InvalidDeviceIdSerialisation(final String message) {
             super(message);
             this.invalidProto = null;
+        }
+
+        private InvalidDeviceIdSerialisation(final String message,
+                final DeviceIdData invalidProto) {
+            super(message);
+            this.invalidProto = invalidProto;
         }
 
         private InvalidDeviceIdSerialisation(final String message,
@@ -39,15 +46,8 @@ public final class DeviceId implements Comparable<DeviceId> {
             this.invalidProto = null;
         }
 
-        private InvalidDeviceIdSerialisation(final String message,
-                final net.vleu.par.protocolbuffer.Devices.DeviceId invalidProto) {
-            super(message);
-            this.invalidProto = invalidProto;
-        }
-
         /** @return The protocol buffer that triggered the exception, or null */
-        public net.vleu.par.protocolbuffer.Devices.DeviceId
-                getInvalidProtocolBuffer() {
+        public DeviceIdData getInvalidProtocolBuffer() {
             return this.invalidProto;
         }
     }
@@ -61,18 +61,20 @@ public final class DeviceId implements Comparable<DeviceId> {
      * @param base64Str
      *            the ID in Base64, URL variant with no padding, as per RFC4648.
      * @return An opaque object representing the DeviceId
-     * @throws InvalidDeviceIdSerialisation If the PB is not valid, as described in the .proto file.
+     * @throws InvalidDeviceIdSerialisation
+     *             If the PB is not valid, as described in the .proto file.
      */
     public static DeviceId fromBase64url(final String base64Str)
             throws InvalidDeviceIdSerialisation {
         final Matcher matcher = BASE64URL_WHITELIST.matcher(base64Str);
         if (!matcher.matches())
-            throw new InvalidDeviceIdSerialisation("Invalid base64url:" + base64Str);
+            throw new InvalidDeviceIdSerialisation("Invalid base64url:"
+                + base64Str);
         final byte[] bytes = Base64UrlCoder.decode(base64Str);
-        net.vleu.par.protocolbuffer.Devices.DeviceId proto;
+        net.vleu.par.protocolbuffer.Devices.DeviceIdData proto;
         try {
             proto =
-                    net.vleu.par.protocolbuffer.Devices.DeviceId
+                    net.vleu.par.protocolbuffer.Devices.DeviceIdData
                             .parseFrom(bytes);
         }
         catch (final InvalidProtocolBufferException e) {
@@ -81,23 +83,29 @@ public final class DeviceId implements Comparable<DeviceId> {
         return fromProtocolBuffer(proto);
     }
 
+    public static DeviceId fromBase64urlWithNoVerifications(
+            final String base64str) {
+        return new DeviceId(base64str);
+    }
+
     /**
-     * Builds a DeviceId after checking that the protocol buffer is indeed valid, as described
-     * in the .proto file.
-     * @param proto The PB that will be checked and used
+     * Builds a DeviceId after checking that the protocol buffer is indeed
+     * valid, as described in the .proto file.
+     * 
+     * @param proto
+     *            The PB that will be checked and used
      * @return An opaque object representing the DeviceId
-     * @throws InvalidDeviceIdSerialisation If the PB is not valid, as described in the .proto file.
+     * @throws InvalidDeviceIdSerialisation
+     *             If the PB is not valid, as described in the .proto file.
      */
     public static DeviceId fromProtocolBuffer(
-            final net.vleu.par.protocolbuffer.Devices.DeviceId proto) throws InvalidDeviceIdSerialisation {
+            final net.vleu.par.protocolbuffer.Devices.DeviceIdData proto)
+            throws InvalidDeviceIdSerialisation {
         if (!isValidProtocolBuffer(proto))
-            throw new InvalidDeviceIdSerialisation("Rejected by DeviceId.isValidProtocolBuffer", proto);
+            throw new InvalidDeviceIdSerialisation(
+                    "Rejected by DeviceId.isValidProtocolBuffer", proto);
         else
             return new DeviceId(proto);
-    }
-    
-    public static DeviceId fromBase64urlWithNoVerifications(final String base64str) {
-        return new DeviceId(base64str);
     }
 
     /**
@@ -108,7 +116,7 @@ public final class DeviceId implements Comparable<DeviceId> {
      * @return A string that represent this protocol buffer, with no padding
      */
     private static String fromProtocolBufferToBase64url(
-            final net.vleu.par.protocolbuffer.Devices.DeviceId proto) {
+            final net.vleu.par.protocolbuffer.Devices.DeviceIdData proto) {
         final byte[] bytes = proto.toByteArray();
         final char[] base64urlChars = Base64UrlCoder.encode(bytes);
         return new String(base64urlChars);
@@ -122,7 +130,7 @@ public final class DeviceId implements Comparable<DeviceId> {
      * @return True if the protocol buffer has one and only one set field.
      */
     public static boolean isValidProtocolBuffer(
-            final net.vleu.par.protocolbuffer.Devices.DeviceId proto) {
+            final net.vleu.par.protocolbuffer.Devices.DeviceIdData proto) {
         int count = 0;
         if (proto.hasAndroidId())
             count++;
@@ -141,7 +149,8 @@ public final class DeviceId implements Comparable<DeviceId> {
      */
     private final String asBase64url;
 
-    private DeviceId(final net.vleu.par.protocolbuffer.Devices.DeviceId proto) {
+    private DeviceId(
+            final net.vleu.par.protocolbuffer.Devices.DeviceIdData proto) {
         this(fromProtocolBufferToBase64url(proto));
     }
 

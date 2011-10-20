@@ -26,20 +26,20 @@ option optimize_for = LITE_RUNTIME;
 
 import "devices.proto";
 
-message HapticNotification {
+message HapticNotificationData {
 	repeated uint32 vibration_sequence = 1 [packed=true];
 	optional bool use_default_sequence = 2 [default = true];
 }
 
-message StatusBarNotification {
+message StatusBarNotificationData {
 	required string text = 1;
 	optional string title = 2;
 }
 
-message Directive {
-	optional DeviceId device_id = 1;
+message DirectiveData {
+	optional DeviceIdData device_id = 1;
 	optional uint64 expiration = 2;
 	optional string source = 32;
-	repeated HapticNotification haptic_notification = 33;
-	repeated StatusBarNotification statusbar_notification = 4;
+	repeated HapticNotificationData haptic_notification = 33;
+	repeated StatusBarNotificationData statusbar_notification = 4;
 }

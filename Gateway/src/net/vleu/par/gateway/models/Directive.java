@@ -17,16 +17,17 @@
 package net.vleu.par.gateway.models;
 
 import net.vleu.par.gateway.models.DeviceId.InvalidDeviceIdSerialisation;
+import net.vleu.par.protocolbuffer.Commands.DirectiveData;
 
 public final class Directive {
-    private final net.vleu.par.protocolbuffer.Commands.Directive.Builder proto;
+    private final DirectiveData.Builder proto;
 
-    public Directive(final net.vleu.par.protocolbuffer.Commands.Directive proto) {
-        this.proto = proto.toBuilder();
-    }
-    
     public Directive() {
-        this.proto = net.vleu.par.protocolbuffer.Commands.Directive.newBuilder();
+        this.proto = DirectiveData.newBuilder();
+    }
+
+    public Directive(final DirectiveData proto) {
+        this.proto = proto.toBuilder();
     }
 
     /** @return The DeviceId, null if missing or unparseable */
