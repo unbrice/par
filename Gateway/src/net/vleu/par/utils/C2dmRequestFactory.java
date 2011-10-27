@@ -23,10 +23,13 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import net.jcip.annotations.ThreadSafe;
+
 import com.google.appengine.api.urlfetch.HTTPHeader;
 import com.google.appengine.api.urlfetch.HTTPMethod;
 import com.google.appengine.api.urlfetch.HTTPRequest;
 
+@ThreadSafe
 public class C2dmRequestFactory {
     /** A HTTPHeader with the Content-Type of an UTF-8 form */
     private static final HTTPHeader CONTENT_TYPE_HTTPHEADER = new HTTPHeader(

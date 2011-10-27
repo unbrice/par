@@ -16,20 +16,26 @@
  */
 package net.vleu.par.gateway;
 
+import com.google.appengine.api.datastore.DatastoreService;
+import com.google.appengine.api.datastore.DatastoreServiceFactory;
+import com.google.appengine.api.datastore.Entity;
+
+import net.jcip.annotations.GuardedBy;
+import net.jcip.annotations.ThreadSafe;
 import net.vleu.par.gateway.datastore.DeviceEntity;
 import net.vleu.par.gateway.models.Device;
 import net.vleu.par.gateway.models.DeviceId;
 import net.vleu.par.gateway.models.UserId;
 
-import com.google.appengine.api.datastore.DatastoreService;
-import com.google.appengine.api.datastore.DatastoreServiceFactory;
-import com.google.appengine.api.datastore.Entity;
-
-/**
- *
- */
+@ThreadSafe
 public final class DeviceRegistrar {
-    /** The GAE datastore where to store the {@link DeviceEntity} */
+    /**
+     * The GAE datastore where to store the {@link DeviceEntity}. Transactions
+     * are *not* going to be used on this Datastore, therefore
+     * its methods will retry when they would otherwise have thrown
+     * ConcurrentAccess .
+     */
+    @GuardedBy("itself")
     private final DatastoreService datastore;
 
     public DeviceRegistrar() {
@@ -53,7 +59,9 @@ public final class DeviceRegistrar {
         final Device device = new Device(deviceId, c2dmRegistrationId);
         final Entity deviceEntity =
                 DeviceEntity.entityFromDevice(ownerId, device);
-        this.datastore.put(deviceEntity);
+        synchronized (datastore) {
+            this.datastore.put(deviceEntity);
+        }
     }
 
 }

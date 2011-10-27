@@ -62,7 +62,7 @@ public final class DeviceId implements Comparable<DeviceId> {
      *            the ID in Base64, URL variant with no padding, as per RFC4648.
      * @return An opaque object representing the DeviceId
      * @throws InvalidDeviceIdSerialisation
-     *             If the PB is not valid, as described in the .proto file.
+     *             If the PB is not as described in the .proto file.
      */
     public static DeviceId fromBase64url(final String base64Str)
             throws InvalidDeviceIdSerialisation {
@@ -71,11 +71,9 @@ public final class DeviceId implements Comparable<DeviceId> {
             throw new InvalidDeviceIdSerialisation("Invalid base64url:"
                 + base64Str);
         final byte[] bytes = Base64UrlCoder.decode(base64Str);
-        net.vleu.par.protocolbuffer.Devices.DeviceIdData proto;
+        DeviceIdData proto;
         try {
-            proto =
-                    net.vleu.par.protocolbuffer.Devices.DeviceIdData
-                            .parseFrom(bytes);
+            proto = DeviceIdData.parseFrom(bytes);
         }
         catch (final InvalidProtocolBufferException e) {
             throw new InvalidDeviceIdSerialisation(base64Str, e);
@@ -96,10 +94,9 @@ public final class DeviceId implements Comparable<DeviceId> {
      *            The PB that will be checked and used
      * @return An opaque object representing the DeviceId
      * @throws InvalidDeviceIdSerialisation
-     *             If the PB is not valid, as described in the .proto file.
+     *             If the PB is not as described in the .proto file.
      */
-    public static DeviceId fromProtocolBuffer(
-            final net.vleu.par.protocolbuffer.Devices.DeviceIdData proto)
+    public static DeviceId fromProtocolBuffer(final DeviceIdData proto)
             throws InvalidDeviceIdSerialisation {
         if (!isValidProtocolBuffer(proto))
             throw new InvalidDeviceIdSerialisation(
@@ -115,8 +112,8 @@ public final class DeviceId implements Comparable<DeviceId> {
      *            The protocol buffer, must be valid, it won't be verified.
      * @return A string that represent this protocol buffer, with no padding
      */
-    private static String fromProtocolBufferToBase64url(
-            final net.vleu.par.protocolbuffer.Devices.DeviceIdData proto) {
+    private static String
+            fromProtocolBufferToBase64url(final DeviceIdData proto) {
         final byte[] bytes = proto.toByteArray();
         final char[] base64urlChars = Base64UrlCoder.encode(bytes);
         return new String(base64urlChars);
@@ -129,8 +126,7 @@ public final class DeviceId implements Comparable<DeviceId> {
      *            The suspicious protocolbuffer.
      * @return True if the protocol buffer has one and only one set field.
      */
-    public static boolean isValidProtocolBuffer(
-            final net.vleu.par.protocolbuffer.Devices.DeviceIdData proto) {
+    public static boolean isValidProtocolBuffer(final DeviceIdData proto) {
         int count = 0;
         if (proto.hasAndroidId())
             count++;
@@ -149,8 +145,7 @@ public final class DeviceId implements Comparable<DeviceId> {
      */
     private final String asBase64url;
 
-    private DeviceId(
-            final net.vleu.par.protocolbuffer.Devices.DeviceIdData proto) {
+    private DeviceId(final DeviceIdData proto) {
         this(fromProtocolBufferToBase64url(proto));
     }
 

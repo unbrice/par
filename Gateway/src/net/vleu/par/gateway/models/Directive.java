@@ -16,29 +16,60 @@
  */
 package net.vleu.par.gateway.models;
 
-import net.vleu.par.gateway.models.DeviceId.InvalidDeviceIdSerialisation;
 import net.vleu.par.protocolbuffer.Commands.DirectiveData;
+import net.vleu.par.protocolbuffer.Devices.DeviceIdData;
+
+import com.google.protobuf.InvalidProtocolBufferException;
 
 public final class Directive {
-    private final DirectiveData.Builder proto;
+    @SuppressWarnings("serial")
+    public static class InvalidDirectiveSerialisation extends Exception {
+        private final DeviceIdData invalidProto;
 
-    public Directive() {
-        this.proto = DirectiveData.newBuilder();
+        private InvalidDirectiveSerialisation(final String message) {
+            super(message);
+            this.invalidProto = null;
+        }
+
+        private InvalidDirectiveSerialisation(final String message,
+                final DeviceIdData invalidProto) {
+            super(message);
+            this.invalidProto = invalidProto;
+        }
+
+        private InvalidDirectiveSerialisation(final String message,
+                final Exception cause) {
+            super(message, cause);
+            this.invalidProto = null;
+        }
+
+        /** @return The protocol buffer that triggered the exception, or null */
+        public DeviceIdData getInvalidProtocolBuffer() {
+            return this.invalidProto;
+        }
     }
+
+    public static Directive fromProtocolBuffer(final byte[] data)
+            throws InvalidDirectiveSerialisation {
+        Directive res;
+        try {
+            res = new Directive(DirectiveData.parseFrom(data));
+        }
+        catch (final InvalidProtocolBufferException e) {
+            throw new InvalidDirectiveSerialisation(
+                    "Protocol Buffer does not parse", e);
+        }
+        // TODO: Check it is valid
+        return res;
+    }
+
+    private final DirectiveData proto;
 
     public Directive(final DirectiveData proto) {
-        this.proto = proto.toBuilder();
+        this.proto = proto;
     }
 
-    /** @return The DeviceId, null if missing or unparseable */
-    public DeviceId getDeviceId() {
-        if (!this.proto.hasDeviceId())
-            return null;
-        try {
-            return DeviceId.fromProtocolBuffer(this.proto.getDeviceId());
-        }
-        catch (final InvalidDeviceIdSerialisation _) {
-            return null;
-        }
+    public byte[] asProtocolBufferBytes() {
+        return this.proto.toByteArray();
     }
 }

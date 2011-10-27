@@ -35,6 +35,7 @@ public final class DeviceEntity {
     }
 
     public static Device deviceFromEntity(final Entity entity) {
+        assert (entity.getKind() == KIND);
         final String c2dmRegistrationId =
                 (String) entity.getProperty(C2DM_REGISTRATION_ID_PROPERTY);
         final DeviceId id =

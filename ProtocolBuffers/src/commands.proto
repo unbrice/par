@@ -27,18 +27,19 @@ option optimize_for = LITE_RUNTIME;
 import "devices.proto";
 
 message HapticNotificationData {
+	/* If there is not, we will use the default sequence */
 	repeated uint32 vibration_sequence = 1 [packed=true];
-	optional bool use_default_sequence = 2 [default = true];
 }
 
 message StatusBarNotificationData {
-	required string text = 1;
+	/* If empty, a default text will be shown */
+	optional string text = 1;
+	/* If empty, a default title will be shown */
 	optional string title = 2;
 }
 
 message DirectiveData {
-	optional DeviceIdData device_id = 1;
-	optional uint64 expiration = 2;
+	optional uint64 expiration = 1;
 	optional string source = 32;
 	repeated HapticNotificationData haptic_notification = 33;
 	repeated StatusBarNotificationData statusbar_notification = 4;

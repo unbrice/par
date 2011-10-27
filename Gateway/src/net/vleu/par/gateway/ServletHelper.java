@@ -16,6 +16,7 @@
  */
 package net.vleu.par.gateway;
 
+import net.jcip.annotations.ThreadSafe;
 import net.vleu.par.gateway.models.UserId;
 
 import com.google.appengine.api.users.UserService;
@@ -24,21 +25,17 @@ import com.google.appengine.api.users.UserServiceFactory;
 /**
  * A collection of utility functions shared among Servlets
  */
+@ThreadSafe
 final class ServletHelper {
-    private final UserService userService;
-
-    public ServletHelper() {
-        this(UserServiceFactory.getUserService());
-    }
-
-    /** For dependency-injection during tests */
-    ServletHelper(final UserService userService) {
-        this.userService = userService;
-    }
+    static final InjectableThreadLocal<UserService> USER_SERVICES = new InjectableThreadLocal<UserService>() {
+        protected UserService instantiateValue() {
+            return UserServiceFactory.getUserService(); 
+        };   
+    };
 
     public synchronized UserId getCurrentUser() {
         final com.google.appengine.api.users.User googleUser =
-                this.userService.getCurrentUser();
+                USER_SERVICES.get().getCurrentUser();
         if (googleUser == null)
             return null;
         final String googleAuthId = googleUser.getUserId();

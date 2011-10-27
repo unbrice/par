@@ -12,7 +12,6 @@ http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
 		<servlet-name>DeviceWaker</servlet-name>
 		<url-pattern>/_ah/queue/deviceWakerQueue</url-pattern>
 	</servlet-mapping>
-
 	<security-constraint>
 		<web-resource-collection>
 			<web-resource-name>TasksQueues</web-resource-name>
@@ -22,4 +21,23 @@ http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
 			<role-name>admin</role-name>
 		</auth-constraint>
 	</security-constraint>
+
+	<servlet>
+		<servlet-name>Api</servlet-name>
+		<servlet-class>net.vleu.par.gateway.ApiServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>Api</servlet-name>
+		<url-pattern>/api/0</url-pattern>
+	</servlet-mapping>
+	<security-constraint>
+		<web-resource-collection>
+			<url-pattern>/api/*</url-pattern>
+		</web-resource-collection>
+		<auth-constraint>
+			<!-- Any logged user -->
+			<role-name>*</role-name>
+		</auth-constraint>
+	</security-constraint>
+
 </web-app>

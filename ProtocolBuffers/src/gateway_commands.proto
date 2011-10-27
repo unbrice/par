@@ -14,27 +14,28 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package net.vleu.par.gateway;
 
-import net.jcip.annotations.ThreadSafe;
+package net.vleu.par.protocolbuffer;
 
-/**
- * Non-instatiable class representing HTTP constants.
- */
-@ThreadSafe
-final class HttpCodes {
-    /** HTTP error code 400 */
-    public static final int HTTP_BAD_REQUEST_STATUS = 400;
-    /** HTTP error code 403 */
-    public static final int HTTP_FORBIDDEN_STATUS = 403;
-    /** HTTP error code 410 */
-    public static final int HTTP_GONE_STATUS = 410;
-    /** HTTP error code 500 */
-    public static final int HTTP_INTERNAL_ERROR_STATUS = 500;
-    /** HTTP error code 503 */
-    public static final int HTTP_SERVICE_UNAVAILABLE_STATUS = 500;
+// This file relies on plugins to generate service code.
+option cc_generic_services = false;
+option java_generic_services = false;
+option py_generic_services = false;
 
-    private HttpCodes() {
+option optimize_for = LITE_RUNTIME;
 
-    }
+import "commands.proto";
+import "devices.proto";
+
+message GatewayRequestData {
+	message RegisterDeviceData {
+		required DeviceIdData deviceId = 1;
+		required string c2dm_registration_id = 16;
+	}
+	message QueueDirectiveData {
+		required DeviceIdData deviceId = 1;
+		required DirectiveData directive = 2;
+	}
+	repeated RegisterDeviceData registerDevice = 1;
+	repeated QueueDirectiveData queueDirective = 2;
 }

@@ -45,6 +45,7 @@ public abstract class UserEntity {
      * @return A {@link User}
      */
     public static User userFromEntity(final Entity entity) {
+        assert (entity.getKind() == KIND);
         final UserId userId =
                 UserId.fromGoogleAuthId(entity.getKey().getName());
         return new User(userId);

@@ -29,6 +29,10 @@ import net.vleu.par.gateway.models.UserId;
 
 import com.google.appengine.api.datastore.EntityNotFoundException;
 
+/**
+ * This class is a callback used by AppEngine's Tasks API for the tasks that are
+ * queued by {@link DeviceWaker#queueWake(UserId, DeviceId)}
+ */
 @SuppressWarnings("serial")
 public class DeviceWakerServlet extends HttpServlet {
     public static final String APPENGINE_QUEUE_NAME = "deviceWakerQueue";
@@ -52,8 +56,9 @@ public class DeviceWakerServlet extends HttpServlet {
     /** @inherit */
     @Override
     // TODO: Switch to ProtoRPC
-    public void doGet(final HttpServletRequest req,
-            final HttpServletResponse resp) throws IOException {
+            public
+            void doGet(final HttpServletRequest req,
+                    final HttpServletResponse resp) throws IOException {
         final DeviceId deviceId;
         final UserId userId;
         final String base64urlDeviceId = req.getParameter(DEVICE_ID_HTTP_PARAM);
@@ -80,13 +85,14 @@ public class DeviceWakerServlet extends HttpServlet {
         try {
             deviceId = DeviceId.fromBase64url(base64urlDeviceId);
         }
-        catch (InvalidDeviceIdSerialisation e) {
-            resp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS, "Invalid "+ DEVICE_ID_HTTP_PARAM);
+        catch (final InvalidDeviceIdSerialisation e) {
+            resp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS, "Invalid "
+                + DEVICE_ID_HTTP_PARAM);
             return;
         }
         userId = UserId.fromGoogleAuthId(stringUserId);
         try {
-            this.deviceWaker.wake(userId, deviceId);
+            this.deviceWaker.reallyWake(userId, deviceId);
         }
         catch (final EntityNotFoundException e) {
             resp.sendError(HttpCodes.HTTP_GONE_STATUS, "Unknown device: "
@@ -95,5 +101,11 @@ public class DeviceWakerServlet extends HttpServlet {
         }
         resp.setContentType("text/plain");
         resp.getWriter().println("Done.");
+        // TODO: There is a race where the device can be awoken while
+        // data are added, in which case it may not receive the data.
+        // This could be fixed in a few way, the least problematic seems
+        // to add two tasks, the second being anonymous and in charge for
+        // checking that either the first is planned or that there are no
+        // longer any items to deliver
     }
 }
