@@ -16,6 +16,7 @@
  */
 package net.vleu.par.gateway;
 
+import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.logging.Logger;
 
@@ -23,6 +24,7 @@ import net.jcip.annotations.ThreadSafe;
 import net.vleu.par.gateway.datastore.DeviceEntity;
 import net.vleu.par.gateway.datastore.DirectiveEntity;
 import net.vleu.par.gateway.datastore.TooManyConcurrentAccesses;
+import net.vleu.par.gateway.datastore.TransactionHelper;
 import net.vleu.par.gateway.models.DeviceId;
 import net.vleu.par.gateway.models.Directive;
 import net.vleu.par.gateway.models.UserId;
@@ -30,6 +32,8 @@ import net.vleu.par.gateway.models.UserId;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.Query;
+import com.google.appengine.api.datastore.QueryResultList;
 import com.google.appengine.api.datastore.Transaction;
 
 @ThreadSafe
@@ -48,40 +52,57 @@ public final class DirectiveStore {
     private static final Logger LOG = Logger.getLogger(DirectiveStore.class
             .getName());
 
-    /**
-     * After failing to commit a single transaction this number of time, we'll
-     * abort. The current value is quite random.
-     */
-    private static final int MAX_COMMIT_RETRIES = 128;
+    public ArrayList<Directive> fetchAndDelete(final UserId ownerId,
+            final DeviceId deviceId) throws TooManyConcurrentAccesses {
+        final String methodName =
+                getClass().getCanonicalName() + ".fetchAndDelete()";
+        final ArrayList<Directive> result = new ArrayList<Directive>();
+        final Query query =
+                DirectiveEntity
+                        .buildQueryForQueuedDirectives(ownerId, deviceId);
+        new TransactionHelper(DATASTORES.get(), LOG, methodName) {
+            @Override
+            protected void doInsideTransaction(
+                    final DatastoreService datastore, final Transaction txn)
+                    throws ConcurrentModificationException {
+                final QueryResultList<Entity> queryResult;
+                result.clear();
+                /* Lists the directives */
+                queryResult =
+                        datastore.prepare(txn, query).asQueryResultList(null);
+                for (final Entity entity : queryResult)
+                    try {
+                        result.add(DirectiveEntity.directiveFromEntity(entity));
+                    }
+                    catch (final Exception e) {
+                        LOG.severe("An invalid Directive has been found in the datastore ! "
+                            + e);
+                        /*
+                         * The only thing we can do with an invalid directive is
+                         * to ignore it. It will be deleted with the valid
+                         * directives
+                         */
+                    }
+                /* Deletes the fetched entities */
+                for (final Entity entity : queryResult)
+                    datastore.delete(entity.getKey());
+            }
+        }.call();
+        return result;
+    }
 
     public void store(final UserId ownerId, final DeviceId deviceId,
             final Directive directive) throws TooManyConcurrentAccesses {
+        final String methodName = getClass().getCanonicalName() + ".store()";
         final Entity asEntity =
                 DirectiveEntity.entityFromDirective(ownerId, directive);
-        boolean commited = false;
-        int commitRetries = 0;
-        do {
-            final Transaction txn = DATASTORES.get().beginTransaction();
-            try {
-                DATASTORES.get().put(txn, asEntity);
-                txn.commit();
-                commited = true;
+        new TransactionHelper(DATASTORES.get(), LOG, methodName) {
+            @Override
+            protected void doInsideTransaction(
+                    final DatastoreService datastore, final Transaction txn)
+                    throws ConcurrentModificationException {
+                datastore.put(txn, asEntity);
             }
-            catch (final ConcurrentModificationException e) {
-                final String message =
-                        getClass().getCanonicalName()
-                            + ".store(): Commit failed. Retried "
-                            + commitRetries + " times.";
-                LOG.fine(message + ":" + e.toString());
-                commitRetries++;
-                if (commitRetries > MAX_COMMIT_RETRIES)
-                    throw new TooManyConcurrentAccesses(message, e);
-            }
-            finally {
-                if (txn.isActive())
-                    txn.rollback();
-            }
-        } while (!commited);
+        }.call();
     }
-
 }

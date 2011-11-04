@@ -20,11 +20,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData;
+import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.GetDeviceDirectivesData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.QueueDirectiveData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.RegisterDeviceData;
 
 /**
- * Encapsulates a {@link GatewayRequestData}
+ * Encapsulates a {@link GatewayRequestData}.
  */
 public final class GatewayRequest {
     /**
@@ -46,7 +47,29 @@ public final class GatewayRequest {
         for (final RegisterDeviceData d : reqData.getRegisterDeviceList())
             if (!isValid(d, errors))
                 valid = false;
+        for (final GetDeviceDirectivesData d : reqData
+                .getGetDeviceDirectivesList())
+            if (!isValid(d, errors))
+                valid = false;
         return valid;
+    }
+
+    /**
+     * Checks that the data are as described in the .proto file
+     * 
+     * @param data
+     *            Data to check
+     * @param errors
+     *            Strings describing the errors will be added to it
+     * @return true is they are as described, false else
+     */
+    private static boolean isValid(final GetDeviceDirectivesData data,
+            final ArrayList<String> errors) {
+        if (!DeviceId.isValidProtocolBuffer(data.getDeviceId())) {
+            errors.add("Invalid DeviceId");
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -93,6 +116,10 @@ public final class GatewayRequest {
 
     public GatewayRequest(final GatewayRequestData proto) {
         this.proto = proto;
+    }
+
+    public List<GetDeviceDirectivesData> getGetDeviceDirectivesData() {
+        return this.proto.getGetDeviceDirectivesList();
     }
 
     public List<QueueDirectiveData> getQueueDirectivesData() {

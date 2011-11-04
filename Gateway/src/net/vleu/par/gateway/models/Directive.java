@@ -69,6 +69,10 @@ public final class Directive {
         this.proto = proto;
     }
 
+    public DirectiveData asProtocolBuffer() {
+        return this.proto;
+    }
+
     public byte[] asProtocolBufferBytes() {
         return this.proto.toByteArray();
     }

@@ -17,38 +17,42 @@
 package net.vleu.par.gateway.datastore;
 
 /**
- * Thrown when too many transaction confliected and the auto-retry
- * aborted.
+ * Thrown when too many transaction conflicted and the auto-retry aborted.
+ * 
+ * @see <a href=
+ *      "http://code.google.com/appengine/docs/java/datastore/transactions.html#Uses_for_Transactions"
+ *      > the "Retry upon concurrentmodifications" pattern </a>
+ * @see {@link TransactionHelper}
  */
 @SuppressWarnings("serial")
 public final class TooManyConcurrentAccesses extends Exception {
     /**
      * @see Exception#Exception(String)
      */
-    public TooManyConcurrentAccesses(String message) {
+    public TooManyConcurrentAccesses(final String message) {
         super(message);
-    }
-
-    /**
-     * @see Exception#Exception(Throwable)
-     */
-    public TooManyConcurrentAccesses(Throwable cause) {
-        super(cause);
     }
 
     /**
      * @see Exception#Exception(String, Throwable)
      */
-    public TooManyConcurrentAccesses(String message, Throwable cause) {
+    public TooManyConcurrentAccesses(final String message, final Throwable cause) {
         super(message, cause);
     }
 
     /**
      * @see Exception#Exception(String, Throwable, boolean, boolean)
      */
-    public TooManyConcurrentAccesses(String message, Throwable cause,
-            boolean enableSuppression, boolean writableStackTrace) {
+    public TooManyConcurrentAccesses(final String message,
+            final Throwable cause, final boolean enableSuppression,
+            final boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
     }
 
+    /**
+     * @see Exception#Exception(Throwable)
+     */
+    public TooManyConcurrentAccesses(final Throwable cause) {
+        super(cause);
+    }
 }

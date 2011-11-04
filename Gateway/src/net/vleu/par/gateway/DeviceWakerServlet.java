@@ -23,6 +23,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import net.jcip.annotations.ThreadSafe;
 import net.vleu.par.gateway.models.DeviceId;
 import net.vleu.par.gateway.models.DeviceId.InvalidDeviceIdSerialisation;
 import net.vleu.par.gateway.models.UserId;
@@ -33,6 +34,7 @@ import com.google.appengine.api.datastore.EntityNotFoundException;
  * This class is a callback used by AppEngine's Tasks API for the tasks that are
  * queued by {@link DeviceWaker#queueWake(UserId, DeviceId)}
  */
+@ThreadSafe
 @SuppressWarnings("serial")
 public class DeviceWakerServlet extends HttpServlet {
     public static final String APPENGINE_QUEUE_NAME = "deviceWakerQueue";
@@ -54,11 +56,10 @@ public class DeviceWakerServlet extends HttpServlet {
     }
 
     /** @inherit */
-    @Override
     // TODO: Switch to ProtoRPC
-            public
-            void doGet(final HttpServletRequest req,
-                    final HttpServletResponse resp) throws IOException {
+    @Override
+    public void doGet(final HttpServletRequest req,
+            final HttpServletResponse resp) throws IOException {
         final DeviceId deviceId;
         final UserId userId;
         final String base64urlDeviceId = req.getParameter(DEVICE_ID_HTTP_PARAM);

@@ -16,6 +16,7 @@
  */
 package net.vleu.par.gateway.datastore;
 
+import net.vleu.par.gateway.models.DeviceId;
 import net.vleu.par.gateway.models.Directive;
 import net.vleu.par.gateway.models.Directive.InvalidDirectiveSerialisation;
 import net.vleu.par.gateway.models.UserId;
@@ -23,10 +24,17 @@ import net.vleu.par.gateway.models.UserId;
 import com.google.appengine.api.datastore.Blob;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.Key;
+import com.google.appengine.api.datastore.Query;
 
 public final class DirectiveEntity {
     public static final String KIND = "Directive";
     public static final String PROTOCOL_BUFFER_PROPERTY = "protobuff";
+
+    public static Query buildQueryForQueuedDirectives(final UserId ownerId,
+            final DeviceId deviceId) {
+        final Key parentKey = DeviceEntity.keyForIds(ownerId, deviceId);
+        return new Query(KIND, parentKey);
+    }
 
     public static Directive directiveFromEntity(final Entity entity)
             throws InvalidDirectiveSerialisation {

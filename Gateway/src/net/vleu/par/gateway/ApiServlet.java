@@ -35,8 +35,10 @@ import net.vleu.par.gateway.models.UserId;
 import net.vleu.par.protocolbuffer.Commands.DirectiveData;
 import net.vleu.par.protocolbuffer.Devices.DeviceIdData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData;
+import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.GetDeviceDirectivesData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.QueueDirectiveData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.RegisterDeviceData;
+import net.vleu.par.protocolbuffer.GatewayCommands.GatewayResponseData;
 
 @ThreadSafe
 @SuppressWarnings("serial")
@@ -129,13 +131,13 @@ public final class ApiServlet extends HttpServlet {
     /** @inherit */
     @Override
     public void doPost(final HttpServletRequest req,
-            final HttpServletResponse resp) throws IOException {
+            final HttpServletResponse httpResp) throws IOException {
         final UserId userId = this.servletHelper.getCurrentUser();
         final GatewayRequest request;
 
         /* Checks that the user is authenticated */
         if (userId == null) {
-            resp.sendError(HttpCodes.HTTP_FORBIDDEN_STATUS,
+            httpResp.sendError(HttpCodes.HTTP_FORBIDDEN_STATUS,
                     "Requests must be authenticated");
             LOG.finer("Unauthenticated request");
             return;
@@ -151,13 +153,13 @@ public final class ApiServlet extends HttpServlet {
                 final String msg =
                         "Protocol buffer rejected for its size (empty or too big)";
                 LOG.fine(msg);
-                resp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS, msg);
+                httpResp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS, msg);
                 return;
             }
             requestPB = GatewayRequestData.parseFrom(requestBytes);
             if (!GatewayRequest.isValid(requestPB, errors)) {
                 LOG.fine("Requests rejected: " + joinStrings(errors, " --- \n"));
-                resp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS,
+                httpResp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS,
                         joinStrings(errors, "<br />\n"));
                 return;
             }
@@ -165,15 +167,24 @@ public final class ApiServlet extends HttpServlet {
         }
 
         try {
-            handleRequest(userId, request, resp);
+            final GatewayResponseData.Builder responseBuilder =
+                    GatewayResponseData.newBuilder();
+            final GatewayResponseData responseProto;
+            handleRequest(userId, request, responseBuilder);
+            responseProto = responseBuilder.build();
+            httpResp.setContentType("application/octet-stream");
+            httpResp.setContentLength(responseProto.getSerializedSize());
+            responseProto.writeTo(httpResp.getOutputStream());
+            httpResp.flushBuffer();
+            httpResp.getOutputStream().close();
         }
         catch (final InvalidRequestPassedVerification e) {
-            resp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS, e.toString());
+            httpResp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS, e.toString());
             LOG.severe(e.toString());
             return;
         }
         catch (final TooManyConcurrentAccesses e) {
-            resp.sendError(HttpCodes.HTTP_SERVICE_UNAVAILABLE_STATUS,
+            httpResp.sendError(HttpCodes.HTTP_SERVICE_UNAVAILABLE_STATUS,
                     e.toString());
             LOG.severe(e.toString());
             return;
@@ -181,17 +192,35 @@ public final class ApiServlet extends HttpServlet {
     }
 
     private void handleRequest(final UserId userId, final GatewayRequest req,
-            final HttpServletResponse resp)
+            final GatewayResponseData.Builder resp)
             throws InvalidRequestPassedVerification, TooManyConcurrentAccesses {
         for (final QueueDirectiveData qd : req.getQueueDirectivesData())
             handleRequestPart(userId, qd, resp);
         for (final RegisterDeviceData rd : req.getRegisterDeviceData())
             handleRequestPart(userId, rd, resp);
+        for (final GetDeviceDirectivesData rd : req
+                .getGetDeviceDirectivesData())
+            handleRequestPart(userId, rd, resp);
     }
 
     private void handleRequestPart(final UserId userId,
-            final QueueDirectiveData req, final HttpServletResponse resp)
+            final GetDeviceDirectivesData req,
+            final GatewayResponseData.Builder resp)
             throws InvalidRequestPassedVerification, TooManyConcurrentAccesses {
+        final DeviceId deviceId =
+                parseOrThrowInvalidRequestPassedVerification(req.getDeviceId());
+        final ArrayList<Directive> directives =
+                this.directiveStore.fetchAndDelete(userId, deviceId);
+        for (final Directive directive : directives)
+            resp.addDirective(directive.asProtocolBuffer());
+    }
+
+    private void
+            handleRequestPart(final UserId userId,
+                    final QueueDirectiveData req,
+                    final GatewayResponseData.Builder resp)
+                    throws InvalidRequestPassedVerification,
+                    TooManyConcurrentAccesses {
         final DirectiveData directiveData = req.getDirective();
         final Directive directive = new Directive(directiveData);
         final DeviceId deviceId =
@@ -200,9 +229,11 @@ public final class ApiServlet extends HttpServlet {
         this.deviceWaker.queueWake(userId, deviceId);
     }
 
-    private void handleRequestPart(final UserId userId,
-            final RegisterDeviceData req, final HttpServletResponse resp)
-            throws InvalidRequestPassedVerification {
+    private void
+            handleRequestPart(final UserId userId,
+                    final RegisterDeviceData req,
+                    final GatewayResponseData.Builder resp)
+                    throws InvalidRequestPassedVerification {
         final DeviceId deviceId =
                 parseOrThrowInvalidRequestPassedVerification(req.getDeviceId());
         final String c2dmRegistrationId = req.getC2DmRegistrationId();

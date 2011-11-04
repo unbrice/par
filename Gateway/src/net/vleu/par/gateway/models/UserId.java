@@ -16,6 +16,9 @@
  */
 package net.vleu.par.gateway.models;
 
+import net.jcip.annotations.ThreadSafe;
+
+@ThreadSafe
 public final class UserId {
     /**
      * Creates a UserID from a Google ID as per

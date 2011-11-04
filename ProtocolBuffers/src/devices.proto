@@ -24,8 +24,8 @@ option py_generic_services = false;
 
 option optimize_for = LITE_RUNTIME;
 
-/* This message defines only one of its optional fields, to identify
- * a device.
+/* This message defines one and only one of its optional fields, to
+ * identify a particular device.
  */
 message DeviceIdData
 {
