@@ -50,7 +50,7 @@ public class DeviceEntityTest {
     }
 
     private final LocalServiceTestHelper helper = new LocalServiceTestHelper(
-            new LocalDatastoreServiceTestConfig());
+            new LocalDatastoreServiceTestConfig().setStoreDelayMs(0));
 
     @Before
     public void setUp() {
