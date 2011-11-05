@@ -23,6 +23,6 @@ import org.junit.runners.Suite.SuiteClasses;
 @RunWith(Suite.class)
 @SuiteClasses({ DeviceEntityTest.class, DirectiveEntityTest.class,
         TransactionHelperTest.class })
-public class AllGatewayTests {
+public class AllDatastoreTests {
 
 }
