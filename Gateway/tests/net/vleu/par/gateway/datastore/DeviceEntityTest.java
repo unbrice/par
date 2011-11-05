@@ -33,6 +33,9 @@ import com.google.appengine.api.datastore.Key;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 
+/**
+ * Tests for {@link DeviceEntity}
+ */
 public class DeviceEntityTest {
 
     private static final String C2DM_ID = "dummyC2DM";

@@ -16,6 +16,8 @@
  */
 package net.vleu.par.gateway.models;
 
+import java.util.Arrays;
+
 import net.vleu.par.protocolbuffer.Commands.DirectiveData;
 import net.vleu.par.protocolbuffer.Devices.DeviceIdData;
 
@@ -75,5 +77,31 @@ public final class Directive {
 
     public byte[] asProtocolBufferBytes() {
         return this.proto.toByteArray();
+    }
+
+    /**
+     * <b>This method is slow and meant to be used for tests</b> {@inheritDoc}
+     */
+    @Override
+    public boolean equals(final Object other) {
+        if (other != null && other instanceof Directive) {
+            final Directive otherDirective = (Directive) other;
+            return Arrays.equals(asProtocolBufferBytes(),
+                    otherDirective.asProtocolBufferBytes());
+        }
+        return false;
+    };
+
+    /**
+     * <b>This method is slow</b> {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(asProtocolBufferBytes());
+    }
+
+    @Override
+    public String toString() {
+        return Arrays.toString(asProtocolBufferBytes());
     }
 }

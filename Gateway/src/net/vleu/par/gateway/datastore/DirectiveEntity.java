@@ -53,6 +53,5 @@ public final class DirectiveEntity {
     }
 
     private DirectiveEntity() {
-
     }
 }

@@ -23,7 +23,7 @@ import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 
-public abstract class UserEntity {
+public final class UserEntity {
     public static final String KIND = "User";
 
     /**
@@ -49,5 +49,8 @@ public abstract class UserEntity {
         final UserId userId =
                 UserId.fromGoogleAuthId(entity.getKey().getName());
         return new User(userId);
+    }
+    
+    private UserEntity() {
     }
 }

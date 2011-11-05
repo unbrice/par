@@ -20,11 +20,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
-/**
- *
- */
 @RunWith(Suite.class)
-@SuiteClasses({ DeviceEntityTest.class })
+@SuiteClasses({ DeviceEntityTest.class, DirectiveEntityTest.class })
 public class AllGatewayTests {
 
 }
