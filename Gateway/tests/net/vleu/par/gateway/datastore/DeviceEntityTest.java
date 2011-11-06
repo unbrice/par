@@ -96,7 +96,7 @@ public class DeviceEntityTest {
         final Entity entity1 = DeviceEntity.entityFromDevice(USER_ID, device1);
         final DatastoreService ds =
                 DatastoreServiceFactory.getDatastoreService();
-        ds.put(entity1);
+        ds.put(null, entity1);
         final Entity entity2 =
                 ds.get(DeviceEntity.keyForIds(USER_ID, DUMMY_DEVICE_ID));
         final Device device2 = DeviceEntity.deviceFromEntity(entity2);

@@ -16,35 +16,31 @@
  */
 package net.vleu.par.gateway;
 
-import com.google.appengine.api.datastore.DatastoreService;
-import com.google.appengine.api.datastore.DatastoreServiceFactory;
-import com.google.appengine.api.datastore.Entity;
-
-import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
 import net.vleu.par.gateway.datastore.DeviceEntity;
 import net.vleu.par.gateway.models.Device;
 import net.vleu.par.gateway.models.DeviceId;
 import net.vleu.par.gateway.models.UserId;
 
+import com.google.appengine.api.datastore.DatastoreService;
+import com.google.appengine.api.datastore.DatastoreServiceFactory;
+import com.google.appengine.api.datastore.Entity;
+
 @ThreadSafe
 public final class DeviceRegistrar {
     /**
-     * The GAE datastore where to store the {@link DeviceEntity}. Transactions
-     * are *not* going to be used on this Datastore, therefore
-     * its methods will retry when they would otherwise have thrown
-     * ConcurrentAccess .
+     * The GAE datastore where to store the {@link DeviceEntity}. They have to
+     * be local because the {@link DatastoreService} are not thread-safe.
      */
-    @GuardedBy("itself")
-    private final DatastoreService datastore;
+    static final InjectableThreadLocal<DatastoreService> DATASTORES =
+            new InjectableThreadLocal<DatastoreService>() {
+                @Override
+                protected DatastoreService instantiateValue() {
+                    return DatastoreServiceFactory.getDatastoreService();
+                }
+            };
 
     public DeviceRegistrar() {
-        this(DatastoreServiceFactory.getDatastoreService());
-    }
-
-    /** Allows for injecting the private fields, for testing purposes */
-    DeviceRegistrar(final DatastoreService datastore) {
-        this.datastore = datastore;
     }
 
     /**
@@ -59,9 +55,7 @@ public final class DeviceRegistrar {
         final Device device = new Device(deviceId, c2dmRegistrationId);
         final Entity deviceEntity =
                 DeviceEntity.entityFromDevice(ownerId, device);
-        synchronized (datastore) {
-            this.datastore.put(deviceEntity);
-        }
+        DATASTORES.get().put(null, deviceEntity);
     }
 
 }
