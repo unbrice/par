@@ -44,9 +44,9 @@ public final class DirectiveEntity {
     }
 
     public static Entity entityFromDirective(final UserId ownerId,
-            final Directive directive) {
+            final DeviceId deviceId, final Directive directive) {
         final Blob asBlob = new Blob(directive.asProtocolBufferBytes());
-        final Key parentKey = UserEntity.keyForId(ownerId);
+        final Key parentKey = DeviceEntity.keyForIds(ownerId, deviceId);
         final Entity res = new Entity(KIND, parentKey);
         res.setUnindexedProperty(PROTOCOL_BUFFER_PROPERTY, asBlob);
         return res;

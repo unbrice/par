@@ -37,7 +37,7 @@ public abstract class InjectableThreadLocal<T> extends ThreadLocal<T> {
 
     @Override
     public synchronized final T initialValue() {
-        if (this.injected == null)
+        if (this.injected != null)
             return this.injected;
         else
             return instantiateValue();
@@ -45,7 +45,7 @@ public abstract class InjectableThreadLocal<T> extends ThreadLocal<T> {
 
     /**
      * Makes all subsequent calls to {@link #initialValue()} return the injected
-     * object. This is exists to allow for dependency-injection. 
+     * object. This is exists to allow for dependency-injection.
      * 
      * @param injected
      *            The object to inject
@@ -59,7 +59,8 @@ public abstract class InjectableThreadLocal<T> extends ThreadLocal<T> {
      * {@link #inject(Object)} to create new instances that will be return by
      * {@link #initialValue()}.
      * 
-     * @return the initial value for this thread-local if none had been injected
+     * @return A value that will become the initial value for this thread-local
+     *         if no other had been injected
      */
     abstract protected T instantiateValue();
 }

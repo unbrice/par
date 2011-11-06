@@ -40,13 +40,13 @@ public class DeviceEntityTest {
 
     private static final String C2DM_ID = "dummyC2DM";
 
-    private static final DeviceId DEVICE_ID = DeviceId
+    public static final DeviceId DUMMY_DEVICE_ID = DeviceId
             .fromBase64urlWithNoVerifications("CTJ5BgAAAAAA");
 
     private static final UserId USER_ID = UserId.fromGoogleAuthId("dummyUser");
 
     private static Device buildDummyDevice() {
-        return new Device(DEVICE_ID, C2DM_ID);
+        return new Device(DUMMY_DEVICE_ID, C2DM_ID);
     }
 
     private final LocalServiceTestHelper helper = new LocalServiceTestHelper(
@@ -86,7 +86,7 @@ public class DeviceEntityTest {
         final Entity entity = DeviceEntity.entityFromDevice(USER_ID, device);
         assertEquals(C2DM_ID,
                 entity.getProperty(DeviceEntity.C2DM_REGISTRATION_ID_PROPERTY));
-        assertEquals(DEVICE_ID.toBase64url(), entity.getKey().getName());
+        assertEquals(DUMMY_DEVICE_ID.toBase64url(), entity.getKey().getName());
         assertEquals(DeviceEntity.KIND, entity.getKind());
     }
 
@@ -98,7 +98,7 @@ public class DeviceEntityTest {
                 DatastoreServiceFactory.getDatastoreService();
         ds.put(entity1);
         final Entity entity2 =
-                ds.get(DeviceEntity.keyForIds(USER_ID, DEVICE_ID));
+                ds.get(DeviceEntity.keyForIds(USER_ID, DUMMY_DEVICE_ID));
         final Device device2 = DeviceEntity.deviceFromEntity(entity2);
         assertEquals(device1, device2);
     }
@@ -110,8 +110,8 @@ public class DeviceEntityTest {
      */
     @Test
     public void testKeyForIds() {
-        final Key key = DeviceEntity.keyForIds(USER_ID, DEVICE_ID);
-        assertEquals(DEVICE_ID.toBase64url(), key.getName());
+        final Key key = DeviceEntity.keyForIds(USER_ID, DUMMY_DEVICE_ID);
+        assertEquals(DUMMY_DEVICE_ID.toBase64url(), key.getName());
         assertEquals(USER_ID.asString(), key.getParent().getName());
     }
 }

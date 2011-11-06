@@ -16,8 +16,11 @@
  */
 package net.vleu.par.gateway;
 
+import static com.google.appengine.api.datastore.FetchOptions.Builder.withChunkSize;
+
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
+import java.util.List;
 import java.util.logging.Logger;
 
 import net.jcip.annotations.ThreadSafe;
@@ -32,8 +35,8 @@ import net.vleu.par.gateway.models.UserId;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.FetchOptions;
 import com.google.appengine.api.datastore.Query;
-import com.google.appengine.api.datastore.QueryResultList;
 import com.google.appengine.api.datastore.Transaction;
 
 @ThreadSafe
@@ -49,6 +52,9 @@ public final class DirectiveStore {
                     return DatastoreServiceFactory.getDatastoreService();
                 }
             };
+    private static final FetchOptions FETCH_ALL_OPTIONS = withChunkSize(
+            Integer.MAX_VALUE).prefetchSize(Integer.MAX_VALUE);
+
     private static final Logger LOG = Logger.getLogger(DirectiveStore.class
             .getName());
 
@@ -65,11 +71,11 @@ public final class DirectiveStore {
             protected void doInsideTransaction(
                     final DatastoreService datastore, final Transaction txn)
                     throws ConcurrentModificationException {
-                final QueryResultList<Entity> queryResult;
+                final List<Entity> queryResult;
                 result.clear();
                 /* Lists the directives */
                 queryResult =
-                        datastore.prepare(txn, query).asQueryResultList(null);
+                        datastore.prepare(txn, query).asList(FETCH_ALL_OPTIONS);
                 for (final Entity entity : queryResult)
                     try {
                         result.add(DirectiveEntity.directiveFromEntity(entity));
@@ -95,7 +101,8 @@ public final class DirectiveStore {
             final Directive directive) throws TooManyConcurrentAccesses {
         final String methodName = getClass().getCanonicalName() + ".store()";
         final Entity asEntity =
-                DirectiveEntity.entityFromDirective(ownerId, directive);
+                DirectiveEntity.entityFromDirective(ownerId, deviceId,
+                        directive);
         new TransactionHelper(DATASTORES.get(), LOG, methodName) {
             @Override
             protected void doInsideTransaction(

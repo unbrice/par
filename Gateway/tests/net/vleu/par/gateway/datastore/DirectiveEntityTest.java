@@ -36,8 +36,9 @@ import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
  */
 public class DirectiveEntityTest {
 
-    private static final String NOTIFICATION_TEXT = "Notification text";
+    public static final Directive DUMMY_DIRECTIVE = buildDummyDirective();
 
+    private static final String NOTIFICATION_TEXT = "Notification text";
     private static final String NOTIFICATION_TITLE = "Notification title";
     private static final UserId USER_ID = UserId.fromGoogleAuthId("dummyUser");
 
@@ -69,10 +70,13 @@ public class DirectiveEntityTest {
      */
     @Test
     public void testDirectiveFromEntity() {
-        final Directive directive = buildDummyDirective();
         final Entity entity =
-                DirectiveEntity.entityFromDirective(USER_ID, directive);
-        assertEquals(UserEntity.keyForId(USER_ID), entity.getParent());
+                DirectiveEntity.entityFromDirective(USER_ID,
+                        DeviceEntityTest.DUMMY_DEVICE_ID, DUMMY_DIRECTIVE);
+        assertEquals(UserEntity.keyForId(USER_ID), entity.getParent()
+                .getParent());
+        assertEquals(DeviceEntity.keyForIds(USER_ID,
+                DeviceEntityTest.DUMMY_DEVICE_ID), entity.getParent());
     }
 
     /**
@@ -86,12 +90,12 @@ public class DirectiveEntityTest {
     @Test
     public void testEntityToDirectiveWayAndBack()
             throws InvalidDirectiveSerialisation {
-        final Directive original = buildDummyDirective();
         final Entity entity =
-                DirectiveEntity.entityFromDirective(USER_ID, original);
+                DirectiveEntity.entityFromDirective(USER_ID,
+                        DeviceEntityTest.DUMMY_DEVICE_ID, DUMMY_DIRECTIVE);
         final Directive unserialized =
                 DirectiveEntity.directiveFromEntity(entity);
-        assertEquals(original, unserialized);
+        assertEquals(DUMMY_DIRECTIVE, unserialized);
     }
 
 }
