@@ -123,16 +123,22 @@ public final class GatewayRequest {
      * file
      * 
      * @param reqData
-     *            The request to check
+     *            The request to check. Can be null.
      * @param errors
      *            Strings describing the errors will be added to it
-     * @return
+     * @return False if reqData is null or if the data are valid, else true
      */
     public static boolean isValid(final GatewayRequestData reqData,
             final ArrayList<String> errors) {
-        final Validator validator = new Validator(errors);
-        accept(reqData, validator);
-        return validator.allValid;
+        if (reqData != null) {
+            final Validator validator = new Validator(errors);
+            accept(reqData, validator);
+            return validator.allValid;
+        }
+        else {
+            errors.add("Not a ProtocolBuffer !");
+            return false;
+        }
     }
 
     private final GatewayRequestData proto;

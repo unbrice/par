@@ -23,8 +23,8 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(Suite.class)
-@SuiteClasses({ DeviceWakerTest.class, DirectiveStoreTest.class,
-        AllDatastoreTests.class })
+@SuiteClasses({ ApiServletTest.class, DeviceWakerTest.class,
+        DirectiveStoreTest.class, AllDatastoreTests.class })
 public class AllGatewayTests {
 
 }

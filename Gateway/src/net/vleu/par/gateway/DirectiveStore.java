@@ -40,7 +40,7 @@ import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Transaction;
 
 @ThreadSafe
-public final class DirectiveStore {
+public class DirectiveStore {
     private static final FetchOptions FETCH_ALL_OPTIONS = withChunkSize(
             Integer.MAX_VALUE).prefetchSize(Integer.MAX_VALUE);
 

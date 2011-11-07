@@ -26,7 +26,7 @@ import com.google.appengine.api.users.UserServiceFactory;
  * A collection of utility functions shared among Servlets
  */
 @ThreadSafe
-final class ServletHelper {
+class ServletHelper {
     private final ThreadLocal<UserService> userServices;
 
     public ServletHelper() {

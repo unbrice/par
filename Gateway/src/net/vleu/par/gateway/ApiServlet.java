@@ -18,6 +18,7 @@ package net.vleu.par.gateway;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletInputStream;
@@ -39,6 +40,8 @@ import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.GetDeviceD
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.QueueDirectiveData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.RegisterDeviceData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayResponseData;
+
+import com.google.protobuf.InvalidProtocolBufferException;
 
 @ThreadSafe
 @SuppressWarnings("serial")
@@ -120,8 +123,8 @@ public final class ApiServlet extends HttpServlet {
     private static final Logger LOG = Logger.getLogger(ApiServlet.class
             .getName());
 
-    /** Mximal size in bytes for the serialized protocol buffers we accept */
-    private static final int MAX_COMMAND_SIZE = 1024;
+    /** Maximal size in bytes for the serialized protocol buffers we accept */
+    public static final int MAX_COMMAND_SIZE = 1024;
 
     private static String joinStrings(final ArrayList<String> strings,
             final String separator) {
@@ -143,18 +146,20 @@ public final class ApiServlet extends HttpServlet {
 
     private static byte[] readAllBytes(final ServletInputStream stream)
             throws IOException {
-        final byte[] res = new byte[MAX_COMMAND_SIZE];
+        final byte[] buffer = new byte[MAX_COMMAND_SIZE];
         int position = 0;
         int lastRet;
         do {
-            lastRet = stream.read(res, position, MAX_COMMAND_SIZE - position);
-            position += lastRet;
+            lastRet =
+                    stream.read(buffer, position, MAX_COMMAND_SIZE - position);
+            if (lastRet > 0)
+                position += lastRet;
         } while (lastRet > 0);
         if (lastRet == 0) {
             LOG.warning("Truncating a too large input");
             return null;
         }
-        return res;
+        return Arrays.copyOf(buffer, position);
     }
 
     private final DeviceRegistrar deviceRegistrar;
@@ -198,7 +203,7 @@ public final class ApiServlet extends HttpServlet {
         /* Checks that the request is well-formed */
         {
             final byte[] requestBytes;
-            final GatewayRequestData requestPB;
+            GatewayRequestData requestPB;
             final ArrayList<String> errors = new ArrayList<String>(0);
             requestBytes = readAllBytes(req.getInputStream());
             if (requestBytes == null || requestBytes.length == 0) {
@@ -208,7 +213,12 @@ public final class ApiServlet extends HttpServlet {
                 httpResp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS, msg);
                 return;
             }
-            requestPB = GatewayRequestData.parseFrom(requestBytes);
+            try {
+                requestPB = GatewayRequestData.parseFrom(requestBytes);
+            }
+            catch (final InvalidProtocolBufferException e) {
+                requestPB = null;
+            }
             if (!GatewayRequest.isValid(requestPB, errors)) {
                 LOG.fine("Requests rejected: " + joinStrings(errors, " --- \n"));
                 httpResp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS,

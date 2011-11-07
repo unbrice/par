@@ -27,7 +27,7 @@ import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Entity;
 
 @ThreadSafe
-public final class DeviceRegistrar {
+public class DeviceRegistrar {
     /**
      * The GAE datastore where to store the {@link DeviceEntity}. They have to
      * be local because the {@link DatastoreService} are not thread-safe.

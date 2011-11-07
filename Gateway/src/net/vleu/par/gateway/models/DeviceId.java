@@ -56,6 +56,28 @@ public final class DeviceId implements Comparable<DeviceId> {
             .compile("[a-zA-Z0-9\\-_]*");
 
     /**
+     * Decodes a base64 encoded DeviceId into a protocol buffer.
+     * 
+     * @param base64Str
+     *            the ID in Base64, URL variant with no padding, as per RFC4648.
+     * @return A protocol buffer representing the DeviceI
+     * @throws InvalidDeviceIdSerialisation
+     *             If the PB is not as described in the .proto file.
+     */
+    private static DeviceIdData base64ToProto(final String base64Str)
+            throws InvalidDeviceIdSerialisation {
+        final byte[] bytes = Base64UrlCoder.decode(base64Str);
+        DeviceIdData proto;
+        try {
+            proto = DeviceIdData.parseFrom(bytes);
+        }
+        catch (final InvalidProtocolBufferException e) {
+            throw new InvalidDeviceIdSerialisation(base64Str, e);
+        }
+        return proto;
+    }
+
+    /**
      * Does the reverse of {@link #toBase64url()}
      * 
      * @param base64Str
@@ -70,14 +92,7 @@ public final class DeviceId implements Comparable<DeviceId> {
         if (!matcher.matches())
             throw new InvalidDeviceIdSerialisation("Invalid base64url:"
                 + base64Str);
-        final byte[] bytes = Base64UrlCoder.decode(base64Str);
-        DeviceIdData proto;
-        try {
-            proto = DeviceIdData.parseFrom(bytes);
-        }
-        catch (final InvalidProtocolBufferException e) {
-            throw new InvalidDeviceIdSerialisation(base64Str, e);
-        }
+        final DeviceIdData proto = base64ToProto(base64Str);
         return fromProtocolBuffer(proto);
     }
 
@@ -151,6 +166,17 @@ public final class DeviceId implements Comparable<DeviceId> {
 
     private DeviceId(final String asBase64url) {
         this.asBase64url = asBase64url.intern();
+    }
+
+    /** @return A protocol buffer representing itself */
+    public DeviceIdData asProtocolBuffer() {
+        try {
+            return base64ToProto(this.asBase64url);
+        }
+        catch (final InvalidDeviceIdSerialisation e) {
+            throw new InternalError(
+                    "A DeviceId had been built from an invalid protocol buffer!");
+        }
     }
 
     @Override
