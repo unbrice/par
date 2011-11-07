@@ -65,6 +65,58 @@ public final class ApiServlet extends HttpServlet {
         }
     }
 
+    private class RequestHandler implements GatewayRequest.ThrowingVisitor {
+        final GatewayResponseData.Builder resp;
+        final UserId userId;
+
+        public RequestHandler(final GatewayResponseData.Builder resp,
+                final UserId userId) {
+            this.userId = userId;
+            this.resp = resp;
+        }
+
+        @Override
+        public void visit(final GetDeviceDirectivesData req)
+                throws InvalidRequestPassedVerification,
+                TooManyConcurrentAccesses {
+            final DeviceId deviceId =
+                    parseOrThrowInvalidRequestPassedVerification(req
+                            .getDeviceId());
+            final ArrayList<Directive> directives =
+                    ApiServlet.this.directiveStore.fetchAndDelete(this.userId,
+                            deviceId);
+            for (final Directive directive : directives)
+                this.resp.addDirective(directive.asProtocolBuffer());
+
+        }
+
+        @Override
+        public void visit(final QueueDirectiveData req)
+                throws InvalidRequestPassedVerification,
+                TooManyConcurrentAccesses {
+            final DirectiveData directiveData = req.getDirective();
+            final Directive directive = new Directive(directiveData);
+            final DeviceId deviceId =
+                    parseOrThrowInvalidRequestPassedVerification(req
+                            .getDeviceId());
+            ApiServlet.this.directiveStore.store(this.userId, deviceId,
+                    directive);
+            ApiServlet.this.deviceWaker.queueWake(this.userId, deviceId);
+
+        }
+
+        @Override
+        public void visit(final RegisterDeviceData req)
+                throws InvalidRequestPassedVerification {
+            final DeviceId deviceId =
+                    parseOrThrowInvalidRequestPassedVerification(req
+                            .getDeviceId());
+            final String c2dmRegistrationId = req.getC2DmRegistrationId();
+            ApiServlet.this.deviceRegistrar.registerDevice(this.userId,
+                    deviceId, c2dmRegistrationId);
+        }
+    }
+
     private static final Logger LOG = Logger.getLogger(ApiServlet.class
             .getName());
 
@@ -189,55 +241,18 @@ public final class ApiServlet extends HttpServlet {
             LOG.severe(e.toString());
             return;
         }
+        catch (final Exception e) {
+            httpResp.sendError(HttpCodes.HTTP_INTERNAL_ERROR_STATUS,
+                    e.toString());
+            LOG.severe(e.toString());
+            return;
+        }
     }
 
     private void handleRequest(final UserId userId, final GatewayRequest req,
-            final GatewayResponseData.Builder resp)
-            throws InvalidRequestPassedVerification, TooManyConcurrentAccesses {
-        for (final QueueDirectiveData qd : req.getQueueDirectivesData())
-            handleRequestPart(userId, qd, resp);
-        for (final RegisterDeviceData rd : req.getRegisterDeviceData())
-            handleRequestPart(userId, rd, resp);
-        for (final GetDeviceDirectivesData rd : req
-                .getGetDeviceDirectivesData())
-            handleRequestPart(userId, rd, resp);
+            final GatewayResponseData.Builder resp) throws Exception {
+        final RequestHandler handler = new RequestHandler(resp, userId);
+        req.accept(handler);
     }
 
-    private void handleRequestPart(final UserId userId,
-            final GetDeviceDirectivesData req,
-            final GatewayResponseData.Builder resp)
-            throws InvalidRequestPassedVerification, TooManyConcurrentAccesses {
-        final DeviceId deviceId =
-                parseOrThrowInvalidRequestPassedVerification(req.getDeviceId());
-        final ArrayList<Directive> directives =
-                this.directiveStore.fetchAndDelete(userId, deviceId);
-        for (final Directive directive : directives)
-            resp.addDirective(directive.asProtocolBuffer());
-    }
-
-    private void
-            handleRequestPart(final UserId userId,
-                    final QueueDirectiveData req,
-                    final GatewayResponseData.Builder resp)
-                    throws InvalidRequestPassedVerification,
-                    TooManyConcurrentAccesses {
-        final DirectiveData directiveData = req.getDirective();
-        final Directive directive = new Directive(directiveData);
-        final DeviceId deviceId =
-                parseOrThrowInvalidRequestPassedVerification(req.getDeviceId());
-        this.directiveStore.store(userId, deviceId, directive);
-        this.deviceWaker.queueWake(userId, deviceId);
-    }
-
-    private void
-            handleRequestPart(final UserId userId,
-                    final RegisterDeviceData req,
-                    final GatewayResponseData.Builder resp)
-                    throws InvalidRequestPassedVerification {
-        final DeviceId deviceId =
-                parseOrThrowInvalidRequestPassedVerification(req.getDeviceId());
-        final String c2dmRegistrationId = req.getC2DmRegistrationId();
-        this.deviceRegistrar.registerDevice(userId, deviceId,
-                c2dmRegistrationId);
-    }
 }
