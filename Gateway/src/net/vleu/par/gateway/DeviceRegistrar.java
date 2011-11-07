@@ -18,12 +18,12 @@ package net.vleu.par.gateway;
 
 import net.jcip.annotations.ThreadSafe;
 import net.vleu.par.gateway.datastore.DeviceEntity;
+import net.vleu.par.gateway.datastore.ThreadLocalDatastoreService;
 import net.vleu.par.gateway.models.Device;
 import net.vleu.par.gateway.models.DeviceId;
 import net.vleu.par.gateway.models.UserId;
 
 import com.google.appengine.api.datastore.DatastoreService;
-import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
 
 @ThreadSafe
@@ -32,15 +32,20 @@ public final class DeviceRegistrar {
      * The GAE datastore where to store the {@link DeviceEntity}. They have to
      * be local because the {@link DatastoreService} are not thread-safe.
      */
-    static final InjectableThreadLocal<DatastoreService> DATASTORES =
-            new InjectableThreadLocal<DatastoreService>() {
-                @Override
-                protected DatastoreService instantiateValue() {
-                    return DatastoreServiceFactory.getDatastoreService();
-                }
-            };
+    private final ThreadLocal<DatastoreService> datastores;
 
     public DeviceRegistrar() {
+        this(ThreadLocalDatastoreService.getSingleton());
+    }
+
+    /**
+     * Allows dependency injection, for testing purposes.
+     * 
+     * @param datastores
+     *            ThreadGlobal datastores.
+     */
+    DeviceRegistrar(final ThreadLocal<DatastoreService> datastores) {
+        this.datastores = datastores;
     }
 
     /**
@@ -55,7 +60,7 @@ public final class DeviceRegistrar {
         final Device device = new Device(deviceId, c2dmRegistrationId);
         final Entity deviceEntity =
                 DeviceEntity.entityFromDevice(ownerId, device);
-        DATASTORES.get().put(null, deviceEntity);
+        this.datastores.get().put(null, deviceEntity);
     }
 
 }

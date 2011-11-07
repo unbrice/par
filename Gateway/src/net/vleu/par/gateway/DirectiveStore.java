@@ -26,6 +26,7 @@ import java.util.logging.Logger;
 import net.jcip.annotations.ThreadSafe;
 import net.vleu.par.gateway.datastore.DeviceEntity;
 import net.vleu.par.gateway.datastore.DirectiveEntity;
+import net.vleu.par.gateway.datastore.ThreadLocalDatastoreService;
 import net.vleu.par.gateway.datastore.TooManyConcurrentAccesses;
 import net.vleu.par.gateway.datastore.TransactionHelper;
 import net.vleu.par.gateway.models.DeviceId;
@@ -33,7 +34,6 @@ import net.vleu.par.gateway.models.Directive;
 import net.vleu.par.gateway.models.UserId;
 
 import com.google.appengine.api.datastore.DatastoreService;
-import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.FetchOptions;
 import com.google.appengine.api.datastore.Query;
@@ -41,22 +41,31 @@ import com.google.appengine.api.datastore.Transaction;
 
 @ThreadSafe
 public final class DirectiveStore {
-    /**
-     * The GAE datastore where to get the {@link DeviceEntity}. They have to be
-     * local because the {@link DatastoreService} are not thread-safe.
-     */
-    static final InjectableThreadLocal<DatastoreService> DATASTORES =
-            new InjectableThreadLocal<DatastoreService>() {
-                @Override
-                protected DatastoreService instantiateValue() {
-                    return DatastoreServiceFactory.getDatastoreService();
-                }
-            };
     private static final FetchOptions FETCH_ALL_OPTIONS = withChunkSize(
             Integer.MAX_VALUE).prefetchSize(Integer.MAX_VALUE);
 
     private static final Logger LOG = Logger.getLogger(DirectiveStore.class
             .getName());
+
+    /**
+     * The GAE datastore where to get the {@link DeviceEntity}. They have to be
+     * thread-local because the {@link DatastoreService} are not thread-safe.
+     */
+    private final ThreadLocal<DatastoreService> datastores;
+
+    public DirectiveStore() {
+        this(ThreadLocalDatastoreService.getSingleton());
+    }
+
+    /**
+     * Allows dependency injection, for testing purposes.
+     * 
+     * @param datastores
+     *            ThreadGlobal datastores.
+     */
+    DirectiveStore(final ThreadLocal<DatastoreService> datastores) {
+        this.datastores = datastores;
+    }
 
     public ArrayList<Directive> fetchAndDelete(final UserId ownerId,
             final DeviceId deviceId) throws TooManyConcurrentAccesses {
@@ -66,7 +75,7 @@ public final class DirectiveStore {
         final Query query =
                 DirectiveEntity
                         .buildQueryForQueuedDirectives(ownerId, deviceId);
-        new TransactionHelper(DATASTORES.get(), LOG, methodName) {
+        new TransactionHelper(this.datastores.get(), LOG, methodName) {
             @Override
             protected void doInsideTransaction(
                     final DatastoreService datastore, final Transaction txn)
@@ -103,7 +112,7 @@ public final class DirectiveStore {
         final Entity asEntity =
                 DirectiveEntity.entityFromDirective(ownerId, deviceId,
                         directive);
-        new TransactionHelper(DATASTORES.get(), LOG, methodName) {
+        new TransactionHelper(this.datastores.get(), LOG, methodName) {
             @Override
             protected void doInsideTransaction(
                     final DatastoreService datastore, final Transaction txn)

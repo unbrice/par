@@ -27,15 +27,24 @@ import com.google.appengine.api.users.UserServiceFactory;
  */
 @ThreadSafe
 final class ServletHelper {
-    static final InjectableThreadLocal<UserService> USER_SERVICES = new InjectableThreadLocal<UserService>() {
-        protected UserService instantiateValue() {
-            return UserServiceFactory.getUserService(); 
-        };   
-    };
+    private final ThreadLocal<UserService> userServices;
+
+    public ServletHelper() {
+        this(new ThreadLocal<UserService>() {
+            @Override
+            protected UserService initialValue() {
+                return UserServiceFactory.getUserService();
+            }
+        });
+    }
+
+    public ServletHelper(final ThreadLocal<UserService> userServices) {
+        this.userServices = userServices;
+    }
 
     public synchronized UserId getCurrentUser() {
         final com.google.appengine.api.users.User googleUser =
-                USER_SERVICES.get().getCurrentUser();
+                this.userServices.get().getCurrentUser();
         if (googleUser == null)
             return null;
         final String googleAuthId = googleUser.getUserId();

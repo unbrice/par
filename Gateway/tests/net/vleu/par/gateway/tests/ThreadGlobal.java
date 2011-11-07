@@ -14,17 +14,25 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package net.vleu.par.gateway;
+package net.vleu.par.gateway.tests;
 
-import net.vleu.par.gateway.datastore.AllDatastoreTests;
+/**
+ * An {@link ThreadLocal} that always give the same value to all threads.
+ * This class is used for tests.
+ */
+public final class ThreadGlobal<T> extends ThreadLocal<T> {
+    T globalValue;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
-import org.junit.runners.Suite.SuiteClasses;
+    public ThreadGlobal(final T injected) {
+        this.globalValue = injected;
+    }
 
-@RunWith(Suite.class)
-@SuiteClasses({ DeviceWakerTest.class, DirectiveStoreTest.class,
-        AllDatastoreTests.class })
-public class AllGatewayTests {
-
+    /**
+     * @return The object passed to the constructor
+     */
+    @Override
+    @Deprecated
+    protected T initialValue() {
+        return this.globalValue;
+    }
 }

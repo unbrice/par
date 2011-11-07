@@ -18,6 +18,7 @@ package net.vleu.par.gateway.datastore;
 
 import static org.junit.Assert.assertEquals;
 import net.vleu.par.gateway.models.Directive;
+import net.vleu.par.gateway.models.UserIdTest;
 import net.vleu.par.gateway.models.Directive.InvalidDirectiveSerialisation;
 import net.vleu.par.gateway.models.UserId;
 import net.vleu.par.protocolbuffer.Commands.DirectiveData;
@@ -40,7 +41,6 @@ public class DirectiveEntityTest {
 
     private static final String NOTIFICATION_TEXT = "Notification text";
     private static final String NOTIFICATION_TITLE = "Notification title";
-    private static final UserId USER_ID = UserId.fromGoogleAuthId("dummyUser");
 
     private static Directive buildDummyDirective() {
         final DirectiveData.Builder proto = DirectiveData.newBuilder();
@@ -56,12 +56,12 @@ public class DirectiveEntityTest {
             new LocalDatastoreServiceTestConfig().setStoreDelayMs(0));
 
     @Before
-    public void setUp() {
+    public void setUpLocalServiceTest() {
         this.helper.setUp();
     }
 
     @After
-    public void tearDown() {
+    public void tearDownLocalServiceTest() {
         this.helper.tearDown();
     }
 
@@ -71,11 +71,11 @@ public class DirectiveEntityTest {
     @Test
     public void testDirectiveFromEntity() {
         final Entity entity =
-                DirectiveEntity.entityFromDirective(USER_ID,
+                DirectiveEntity.entityFromDirective(UserIdTest.DUMMY_USER_ID,
                         DeviceEntityTest.DUMMY_DEVICE_ID, DUMMY_DIRECTIVE);
-        assertEquals(UserEntity.keyForId(USER_ID), entity.getParent()
+        assertEquals(UserEntity.keyForId(UserIdTest.DUMMY_USER_ID), entity.getParent()
                 .getParent());
-        assertEquals(DeviceEntity.keyForIds(USER_ID,
+        assertEquals(DeviceEntity.keyForIds(UserIdTest.DUMMY_USER_ID,
                 DeviceEntityTest.DUMMY_DEVICE_ID), entity.getParent());
     }
 
@@ -91,7 +91,7 @@ public class DirectiveEntityTest {
     public void testEntityToDirectiveWayAndBack()
             throws InvalidDirectiveSerialisation {
         final Entity entity =
-                DirectiveEntity.entityFromDirective(USER_ID,
+                DirectiveEntity.entityFromDirective(UserIdTest.DUMMY_USER_ID,
                         DeviceEntityTest.DUMMY_DEVICE_ID, DUMMY_DIRECTIVE);
         final Directive unserialized =
                 DirectiveEntity.directiveFromEntity(entity);

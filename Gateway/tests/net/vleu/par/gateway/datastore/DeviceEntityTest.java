@@ -19,7 +19,7 @@ package net.vleu.par.gateway.datastore;
 import static org.junit.Assert.assertEquals;
 import net.vleu.par.gateway.models.Device;
 import net.vleu.par.gateway.models.DeviceId;
-import net.vleu.par.gateway.models.UserId;
+import net.vleu.par.gateway.models.UserIdTest;
 
 import org.junit.After;
 import org.junit.Before;
@@ -43,22 +43,25 @@ public class DeviceEntityTest {
     public static final DeviceId DUMMY_DEVICE_ID = DeviceId
             .fromBase64urlWithNoVerifications("CTJ5BgAAAAAA");
 
-    private static final UserId USER_ID = UserId.fromGoogleAuthId("dummyUser");
-
     private static Device buildDummyDevice() {
         return new Device(DUMMY_DEVICE_ID, C2DM_ID);
+    }
+
+    public static Entity buildDummyDeviceEntity() {
+        return DeviceEntity.entityFromDevice(UserIdTest.DUMMY_USER_ID,
+                buildDummyDevice());
     }
 
     private final LocalServiceTestHelper helper = new LocalServiceTestHelper(
             new LocalDatastoreServiceTestConfig().setStoreDelayMs(0));
 
     @Before
-    public void setUp() {
+    public void setUpLocalServiceTest() {
         this.helper.setUp();
     }
 
     @After
-    public void tearDown() {
+    public void tearDownLocalServiceTest() {
         this.helper.tearDown();
     }
 
@@ -70,7 +73,9 @@ public class DeviceEntityTest {
     @Test
     public void testDeviceFromEntity() {
         final Device device1 = buildDummyDevice();
-        final Entity entity = DeviceEntity.entityFromDevice(USER_ID, device1);
+        final Entity entity =
+                DeviceEntity
+                        .entityFromDevice(UserIdTest.DUMMY_USER_ID, device1);
         final Device device2 = DeviceEntity.deviceFromEntity(entity);
         assertEquals(device1, device2);
     }
@@ -83,7 +88,8 @@ public class DeviceEntityTest {
     @Test
     public void testEntityFromDevice() {
         final Device device = buildDummyDevice();
-        final Entity entity = DeviceEntity.entityFromDevice(USER_ID, device);
+        final Entity entity =
+                DeviceEntity.entityFromDevice(UserIdTest.DUMMY_USER_ID, device);
         assertEquals(C2DM_ID,
                 entity.getProperty(DeviceEntity.C2DM_REGISTRATION_ID_PROPERTY));
         assertEquals(DUMMY_DEVICE_ID.toBase64url(), entity.getKey().getName());
@@ -93,12 +99,15 @@ public class DeviceEntityTest {
     @Test
     public void testFullStoreAndRetrieve() throws EntityNotFoundException {
         final Device device1 = buildDummyDevice();
-        final Entity entity1 = DeviceEntity.entityFromDevice(USER_ID, device1);
+        final Entity entity1 =
+                DeviceEntity
+                        .entityFromDevice(UserIdTest.DUMMY_USER_ID, device1);
         final DatastoreService ds =
                 DatastoreServiceFactory.getDatastoreService();
         ds.put(null, entity1);
         final Entity entity2 =
-                ds.get(DeviceEntity.keyForIds(USER_ID, DUMMY_DEVICE_ID));
+                ds.get(DeviceEntity.keyForIds(UserIdTest.DUMMY_USER_ID,
+                        DUMMY_DEVICE_ID));
         final Device device2 = DeviceEntity.deviceFromEntity(entity2);
         assertEquals(device1, device2);
     }
@@ -110,8 +119,11 @@ public class DeviceEntityTest {
      */
     @Test
     public void testKeyForIds() {
-        final Key key = DeviceEntity.keyForIds(USER_ID, DUMMY_DEVICE_ID);
+        final Key key =
+                DeviceEntity.keyForIds(UserIdTest.DUMMY_USER_ID,
+                        DUMMY_DEVICE_ID);
         assertEquals(DUMMY_DEVICE_ID.toBase64url(), key.getName());
-        assertEquals(USER_ID.asString(), key.getParent().getName());
+        assertEquals(UserIdTest.DUMMY_USER_ID.asString(), key.getParent()
+                .getName());
     }
 }

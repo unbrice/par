@@ -25,7 +25,7 @@ import net.vleu.par.gateway.datastore.DeviceEntityTest;
 import net.vleu.par.gateway.datastore.DirectiveEntityTest;
 import net.vleu.par.gateway.datastore.TooManyConcurrentAccesses;
 import net.vleu.par.gateway.models.Directive;
-import net.vleu.par.gateway.models.UserId;
+import net.vleu.par.gateway.models.UserIdTest;
 
 import org.junit.After;
 import org.junit.Before;
@@ -38,7 +38,6 @@ import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
  * This is more an integration test than a unit test but who cares ?
  */
 public class DirectiveStoreTest {
-    private static final UserId USER_ID = UserId.fromGoogleAuthId("dummyUser");
     private final LocalServiceTestHelper helper = new LocalServiceTestHelper(
             new LocalDatastoreServiceTestConfig().setStoreDelayMs(0));
 
@@ -56,21 +55,24 @@ public class DirectiveStoreTest {
     public void testEmptyDatastore() throws TooManyConcurrentAccesses {
         final DirectiveStore test = new DirectiveStore();
         final ArrayList<Directive> result =
-                test.fetchAndDelete(USER_ID, DeviceEntityTest.DUMMY_DEVICE_ID);
+                test.fetchAndDelete(UserIdTest.DUMMY_USER_ID,
+                        DeviceEntityTest.DUMMY_DEVICE_ID);
         assertTrue(result.isEmpty());
     }
 
     @Test
     public void testStoreTwiceThenFetchTwice() throws TooManyConcurrentAccesses {
         final DirectiveStore test = new DirectiveStore();
-        test.store(USER_ID, DeviceEntityTest.DUMMY_DEVICE_ID,
+        test.store(UserIdTest.DUMMY_USER_ID, DeviceEntityTest.DUMMY_DEVICE_ID,
                 DirectiveEntityTest.DUMMY_DIRECTIVE);
-        test.store(USER_ID, DeviceEntityTest.DUMMY_DEVICE_ID,
+        test.store(UserIdTest.DUMMY_USER_ID, DeviceEntityTest.DUMMY_DEVICE_ID,
                 DirectiveEntityTest.DUMMY_DIRECTIVE);
         final ArrayList<Directive> result1 =
-                test.fetchAndDelete(USER_ID, DeviceEntityTest.DUMMY_DEVICE_ID);
+                test.fetchAndDelete(UserIdTest.DUMMY_USER_ID,
+                        DeviceEntityTest.DUMMY_DEVICE_ID);
         final ArrayList<Directive> result2 =
-                test.fetchAndDelete(USER_ID, DeviceEntityTest.DUMMY_DEVICE_ID);
+                test.fetchAndDelete(UserIdTest.DUMMY_USER_ID,
+                        DeviceEntityTest.DUMMY_DEVICE_ID);
         assertEquals(2, result1.size());
         assertEquals(result1.get(0), DirectiveEntityTest.DUMMY_DIRECTIVE);
         assertEquals(result1.get(1), DirectiveEntityTest.DUMMY_DIRECTIVE);

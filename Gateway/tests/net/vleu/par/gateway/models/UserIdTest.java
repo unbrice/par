@@ -14,17 +14,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package net.vleu.par.gateway;
+package net.vleu.par.gateway.models;
 
-import net.vleu.par.gateway.datastore.AllDatastoreTests;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
-import org.junit.runners.Suite.SuiteClasses;
+public class UserIdTest {
 
-@RunWith(Suite.class)
-@SuiteClasses({ DeviceWakerTest.class, DirectiveStoreTest.class,
-        AllDatastoreTests.class })
-public class AllGatewayTests {
+    public static final UserId DUMMY_USER_ID = UserId
+            .fromGoogleAuthId("dummyUser");
 
 }

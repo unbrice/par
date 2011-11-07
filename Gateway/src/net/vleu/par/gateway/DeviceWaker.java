@@ -24,13 +24,13 @@ import java.util.logging.Logger;
 
 import net.jcip.annotations.ThreadSafe;
 import net.vleu.par.gateway.datastore.DeviceEntity;
+import net.vleu.par.gateway.datastore.ThreadLocalDatastoreService;
 import net.vleu.par.gateway.models.Device;
 import net.vleu.par.gateway.models.DeviceId;
 import net.vleu.par.gateway.models.UserId;
 import net.vleu.par.utils.C2dmRequestFactory;
 
 import com.google.appengine.api.datastore.DatastoreService;
-import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.appengine.api.datastore.Key;
@@ -47,29 +47,8 @@ import com.google.appengine.api.urlfetch.URLFetchServiceFactory;
 @ThreadSafe
 public class DeviceWaker {
 
-    /**
-     * The GAE datastore where to get the {@link DeviceEntity}. They have to be
-     * local because the {@link DatastoreService} are not thread-safe.
-     */
-    static final InjectableThreadLocal<DatastoreService> DATASTORES =
-            new InjectableThreadLocal<DatastoreService>() {
-                @Override
-                protected DatastoreService instantiateValue() {
-                    return DatastoreServiceFactory.getDatastoreService();
-                }
-            };
-
     private static final Logger LOG = Logger.getLogger(DeviceWaker.class
             .getName());
-
-    /** Used to perform the requests to Google C2DM */
-    static final InjectableThreadLocal<URLFetchService> URL_FETCH_SERVICES =
-            new InjectableThreadLocal<URLFetchService>() {
-                @Override
-                protected URLFetchService instantiateValue() {
-                    return URLFetchServiceFactory.getURLFetchService();
-                }
-            };
 
     /**
      * We will wait at least this much time before to wakeing a device, so as to
@@ -83,20 +62,40 @@ public class DeviceWaker {
                 .getString("C2DM_AUTH_TOKEN");
     }
 
+    /**
+     * The GAE datastores where to get the {@link DeviceEntity}. They have to be
+     * thread-local because the {@link DatastoreService} are not thread-safe.
+     */
+    private final ThreadLocal<DatastoreService> datastores;
+
     /** Used to form the requests to Google C2DM */
     private final C2dmRequestFactory requestFactory;
 
     private final Queue taskQueue;
 
+    /** Used to perform the requests to Google C2DM */
+    final ThreadLocal<URLFetchService> urlFetchService;
+
     public DeviceWaker() {
-        this(new C2dmRequestFactory(readC2dmAuthToken()), QueueFactory
-                .getQueue(DeviceWakerServlet.APPENGINE_QUEUE_NAME));
+        this(ThreadLocalDatastoreService.getSingleton(),
+                new C2dmRequestFactory(readC2dmAuthToken()), QueueFactory
+                        .getQueue(DeviceWakerServlet.APPENGINE_QUEUE_NAME),
+                new ThreadLocal<URLFetchService>() {
+                    @Override
+                    protected URLFetchService initialValue() {
+                        return URLFetchServiceFactory.getURLFetchService();
+                    }
+                });
     }
 
     /** Allows for injecting the private fields, for testing purposes */
-    DeviceWaker(final C2dmRequestFactory requestFactory, final Queue taskQueue) {
+    DeviceWaker(final ThreadLocal<DatastoreService> datastoreService,
+            final C2dmRequestFactory requestFactory, final Queue taskQueue,
+            final ThreadLocal<URLFetchService> urlFetchService) {
+        this.datastores = datastoreService;
         this.requestFactory = requestFactory;
         this.taskQueue = taskQueue;
+        this.urlFetchService = urlFetchService;
     }
 
     public boolean queueWake(final UserId ownerId, final DeviceId deviceId) {
@@ -146,14 +145,15 @@ public class DeviceWaker {
     void reallyWake(final UserId ownerId, final DeviceId deviceId)
             throws IOException, EntityNotFoundException {
         final Key deviceKey = DeviceEntity.keyForIds(ownerId, deviceId);
-        final Entity deviceEntity = DATASTORES.get().get(deviceKey);
+        final Entity deviceEntity = this.datastores.get().get(null, deviceKey);
         final Device device = DeviceEntity.deviceFromEntity(deviceEntity);
         final String c2dmRegistrationId = device.getC2dmRegistrationId();
         final HTTPRequest request =
                 this.requestFactory.buildRequest(c2dmRegistrationId);
-        final HTTPResponse response = URL_FETCH_SERVICES.get().fetch(request);
+        final HTTPResponse response = this.urlFetchService.get().fetch(request);
         if (response.getResponseCode() != 200)
             throw new IOException("The C2DM server anwsered a "
                 + response.getResponseCode() + " error.");
+        System.out.println("Response code: " + response.getResponseCode());
     }
 }
