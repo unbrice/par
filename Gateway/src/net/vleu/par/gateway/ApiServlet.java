@@ -47,7 +47,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 @SuppressWarnings("serial")
 public final class ApiServlet extends HttpServlet {
     /**
-     * Thrown when a request is descovedred to be invalid after the point where
+     * Thrown when a request is discovered to be invalid after the point where
      * it should have been checked by
      * {@link GatewayRequest#isValid(GatewayRequestData, ArrayList)}
      */

@@ -30,11 +30,4 @@
 		<nature>org.eclipse.jdt.core.javanature</nature>
 		<nature>com.google.appengine.eclipse.core.gaeNature</nature>
 	</natures>
-	<linkedResources>
-		<link>
-			<name>protobuff</name>
-			<type>2</type>
-			<locationURI>PAR_HOME/ProtocolBuffers/src-gen</locationURI>
-		</link>
-	</linkedResources>
 </projectDescription>

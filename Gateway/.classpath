@@ -1,17 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry including="**/*.java" kind="src" path="protobuff"/>
 	<classpathentry kind="src" path="tests"/>
 	<classpathentry kind="con" path="com.google.appengine.eclipse.core.GAE_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="war/WEB-INF/lib/protobuf-2.4.0a.jar"/>
 	<classpathentry kind="lib" path="libs/mockito-all-1.9.0-rc1.jar"/>
-	<classpathentry kind="lib" path="war/WEB-INF/lib/jcip-annotations.jar" sourcepath="libs/jcip-annotations-src.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="var" path="GOOGLE_APPENGINE_SDK_ROOT/lib/impl/appengine-api-labs.jar"/>
 	<classpathentry kind="var" path="GOOGLE_APPENGINE_SDK_ROOT/lib/impl/appengine-api-stubs.jar"/>
 	<classpathentry kind="var" path="GOOGLE_APPENGINE_SDK_ROOT/lib/impl/appengine-api.jar"/>
 	<classpathentry kind="var" path="GOOGLE_APPENGINE_SDK_ROOT/lib/testing/appengine-testing.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/PARJavaCommon"/>
 	<classpathentry kind="output" path="war/WEB-INF/classes"/>
 </classpath>
