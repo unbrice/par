@@ -16,29 +16,48 @@
  */
 package net.vleu.par.android;
 
+import java.lang.ref.SoftReference;
+
+import net.jcip.annotations.GuardedBy;
+import net.jcip.annotations.ThreadSafe;
 import net.vleu.par.android.sync.SyncAdapter;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
+import android.util.Log;
 
 /**
- * Service that handles sync. It simply instantiates a SyncAdapter and returns its IBinder.
+ * Service that handles sync. It simply instantiates a SyncAdapter and returns
+ * its IBinder.
  */
+@ThreadSafe
 public class SyncService extends Service {
-    private static final Object sSyncAdapterLock = new Object();
-    private static SyncAdapter sSyncAdapter = null;
+    /**
+     * A cached {@link SyncAdapter}. It is important that the same
+     * {@link SyncAdapter} is reused if one is still alive, so that it can
+     * reject multiple synchronization requests happening at once.
+     */
+    @GuardedBy(value = "SyncService.class")
+    private static SoftReference<SyncAdapter> cachedSyncAdapter = null;
+    private static final String TAG = Config.makeLogTag(SyncService.class);
 
-    @Override
-    public void onCreate() {
-        synchronized (sSyncAdapterLock) {
-            if (sSyncAdapter == null) {
-                sSyncAdapter = new SyncAdapter(getApplicationContext(), false);
+    private SyncAdapter getOrInstantiateSyncAdapter() {
+        SyncAdapter result;
+        synchronized (SyncService.class) {
+            if (cachedSyncAdapter == null) {
+                Log.d(TAG, "Instanciating a new SyncAdapter");
+                result = new SyncAdapter(getApplicationContext());
+                cachedSyncAdapter = new SoftReference<SyncAdapter>(result);
+                return result;
             }
+            else
+                return cachedSyncAdapter.get();
         }
     }
 
     @Override
-    public IBinder onBind(Intent intent) {
-        return sSyncAdapter.getSyncAdapterBinder();
+    public IBinder onBind(final Intent intent) {
+        Log.d(TAG, "Binding");
+        return getOrInstantiateSyncAdapter().getSyncAdapterBinder();
     }
 }

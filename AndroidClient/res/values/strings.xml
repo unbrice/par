@@ -16,16 +16,14 @@
   along with this program.  If not, see http://www.gnu.org/licenses/.
 -->
 <resources>
-
-    <string name="input_device_name_title">Device\'s Name</string>
     <string name="app_description">At last, an energy-efficient and reliable way to remote your device!</string>
     <string name="app_name">PARAndroidClient</string>
-    <string name="update_button_title">Update</string>
-    <string name="instructions">INSTRUCTIONS: TODO</string>
-    <string name="instructions_title">Instructions</string>
-    <string name="menu_account_settings">Account settings</string>
-    <string name="menu_account_list">Accounts</string>
-    <string name="account_list_status_sync_disabled">Automatic sync disabled</string>
-    <string name="account_list_status_unknown_account">Unknown</string>
+    <string name="main_instructions_title">Instructions</string>
+    <string name="main_instructions">INSTRUCTIONS: TODO</string>
+    <string name="main_set_device_name_button_title">Set</string>
+    <string name="main_set_device_name_title">Device\'s Name</string>
+    <string name="main_other_preferences_instructions">To access the other preferences, hit \"Menu\".</string>
+    <string name="preferences_device_name_title">Device Name</string>
+    <string name="preferences_device_name_message">This name helps you recognising the device</string>
 
 </resources>

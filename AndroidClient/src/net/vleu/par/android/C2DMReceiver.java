@@ -32,6 +32,7 @@
 
 package net.vleu.par.android;
 
+import net.vleu.par.PlaceHolder;
 import net.vleu.par.android.sync.SyncAdapter;
 import android.accounts.Account;
 import android.accounts.AccountManager;
@@ -75,7 +76,7 @@ public class C2DMReceiver extends C2DMBaseReceiver {
 
                 ContentResolver.requestSync(
                         new Account(accountName, SyncAdapter.GOOGLE_ACCOUNT_TYPE),
-                        JumpNoteContract.AUTHORITY, new Bundle());
+                        PlaceHolder.AUTHORITY, new Bundle());
             }
         }
     }
@@ -92,8 +93,8 @@ public class C2DMReceiver extends C2DMBaseReceiver {
             AccountManager am = AccountManager.get(context);
             Account[] accounts = am.getAccountsByType(SyncAdapter.GOOGLE_ACCOUNT_TYPE);
             for (Account account : accounts) {
-                if (ContentResolver.getIsSyncable(account, JumpNoteContract.AUTHORITY) > 0 &&
-                        ContentResolver.getSyncAutomatically(account, JumpNoteContract.AUTHORITY)) {
+                if (ContentResolver.getIsSyncable(account, PlaceHolder.AUTHORITY) > 0 &&
+                        ContentResolver.getSyncAutomatically(account, PlaceHolder.AUTHORITY)) {
                     autoSyncDesired = true;
                     break;
                 }

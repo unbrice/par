@@ -37,7 +37,7 @@ public final class Config  {
      * as sync on Android is intended to be unobtrusive. Users can get the same sync status info
      * by going to Settings > Accounts & Sync.
      */
-    public static final boolean ENABLE_SYNC_UI = false;
+    public static final boolean ENABLE_SYNC_UI = true;
 
     public static String makeLogTag(Class<?> cls) {
         String tag = "vleu_PAR_" + cls.getSimpleName();

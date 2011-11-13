@@ -24,32 +24,44 @@
     <TextView
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:text="@string/input_device_name_title"
+        android:text="@string/main_set_device_name_title"
         android:textAppearance="?android:attr/textAppearanceLarge" />
 
-    <EditText
-        android:id="@+id/input_device_name_field"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content" >
-    </EditText>
 
-    <Button
-        android:id="@+id/update_button"
-        android:layout_width="wrap_content"
+        <EditText
+            android:id="@+id/main_set_device_name_edittext"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" >
+
+            <requestFocus />
+        </EditText>
+
+        <Button
+            android:id="@+id/main_set_device_name_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/main_set_device_name_button_title" />
+
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/update_button_title">
-        <requestFocus />
-    </Button>
+        android:text="@string/main_other_preferences_instructions" />
 
     <TextView
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:text="@string/instructions_title"
+        android:text="@string/main_instructions_title"
         android:textAppearance="?android:attr/textAppearanceLarge" />
 
     <TextView
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:text="@string/instructions" />
+        android:text="@string/main_instructions" />
 
 </LinearLayout>
