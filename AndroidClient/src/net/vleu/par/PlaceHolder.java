@@ -40,28 +40,12 @@ public final class PlaceHolder {
 
         }
     }
+
     static final String EMPTY_ACCOUNT_NAME = "-";
-    
-    public static Uri buildNoteListUri(String accountName) {
-        return Uri.withAppendedPath(ROOT_URI,
-                accountName == null ? EMPTY_ACCOUNT_NAME : accountName);
-    }
-
-    public static Uri buildNoteUri(String accountName, long noteId) {
-        return Uri.withAppendedPath(buildNoteListUri(accountName), Long.toString(noteId));
-    }
-
-
-    public static String getAccountNameFromUri(Uri uri) {
-        if (!uri.toString().startsWith(ROOT_URI.toString()))
-            throw new IllegalArgumentException("Uri is not a JumpNote URI.");
-
-        return uri.getPathSegments().get(1);
-    }
 
     public static final Uri ROOT_URI = new Uri.Builder()
-            .scheme(ContentResolver.SCHEME_CONTENT).authority(Config.SYNC_AUTHORITY)
-            .appendPath("notes").build();
+            .scheme(ContentResolver.SCHEME_CONTENT)
+            .authority(Config.SYNC_AUTHORITY).appendPath("notes").build();
 
     private static final String TAG = "PlaceHolder";
 
@@ -71,9 +55,33 @@ public final class PlaceHolder {
 
     }
 
+    public static Uri buildNoteListUri(final String accountName) {
+        return Uri.withAppendedPath(ROOT_URI, accountName == null
+                ? EMPTY_ACCOUNT_NAME : accountName);
+    }
+
+    public static Uri buildNoteUri(final String accountName, final long noteId) {
+        return Uri.withAppendedPath(buildNoteListUri(accountName),
+                Long.toString(noteId));
+    }
+
     public static void exchangeWithServer(final GatewayRequestData request,
             final ExchangeWithServerCallack exchangeWithServerCallack) {
         Log.w(TAG, "fetchDirectives");
+    }
+
+    /**
+     * @param account
+     */
+    public static void fetchOrderFromAccount(final Account account) {
+        Log.w(TAG, "fetchOrderFromAccount " + account.name);
+    }
+
+    public static String getAccountNameFromUri(final Uri uri) {
+        if (!uri.toString().startsWith(ROOT_URI.toString()))
+            throw new IllegalArgumentException("Uri is not a JumpNote URI.");
+
+        return uri.getPathSegments().get(1);
     }
 
     public static boolean hasNewStuffToUpload() {
@@ -90,12 +98,5 @@ public final class PlaceHolder {
     }
 
     private PlaceHolder() {
-    }
-
-    /**
-     * @param account
-     */
-    public static void fetchOrderFromAccount(Account account) {
-        Log.w(TAG, "fetchOrderFromAccount " + account.name);
     }
 }

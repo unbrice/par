@@ -45,15 +45,77 @@ import android.widget.Toast;
 import com.google.android.c2dm.C2DMessaging;
 
 public final class SyncAdapter extends AbstractThreadedSyncAdapter {
-    public static final String DEVICE_TYPE = "android";
+    public static final class OnPerformSyncBundle {
+        private final Bundle bundle;
 
+        public OnPerformSyncBundle() {
+            this(new Bundle());
+        }
+
+        public OnPerformSyncBundle(final Bundle bundle) {
+            this.bundle = bundle;
+        }
+
+        public Bundle getBundle() {
+            return this.bundle;
+        }
+
+        /**
+         * @see ContentResolver.SYNC_EXTRAS_INITIALIZE
+         */
+        public boolean getInitialize() {
+            return this.bundle.getBoolean(
+                    ContentResolver.SYNC_EXTRAS_INITIALIZE, false);
+        }
+
+        /**
+         * @see ContentResolver.SYNC_EXTRAS_MANUAL
+         */
+        public boolean getManualSync() {
+            return this.bundle.getBoolean(ContentResolver.SYNC_EXTRAS_MANUAL,
+                    false);
+        }
+
+        /**
+         * @see ContentResolver.SYNC_EXTRAS_UPLOAD
+         */
+        public boolean getUploadOnly() {
+            return this.bundle.getBoolean(ContentResolver.SYNC_EXTRAS_UPLOAD,
+                    false);
+        }
+
+        /**
+         * @see ContentResolver.SYNC_EXTRAS_INITIALIZE
+         */
+        public void setInitialize(final boolean value) {
+            this.bundle.putBoolean(ContentResolver.SYNC_EXTRAS_INITIALIZE,
+                    value);
+        }
+
+        /**
+         * @see ContentResolver.SYNC_EXTRAS_MANUAL
+         */
+        public void setManualSync(final boolean value) {
+            this.bundle.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, value);
+        }
+
+        /**
+         * @see ContentResolver.SYNC_EXTRAS_UPLOAD
+         */
+        public void setUploadOnly(final boolean value) {
+            this.bundle.putBoolean(ContentResolver.SYNC_EXTRAS_UPLOAD, value);
+        }
+    }
+
+    public static final String DEVICE_TYPE = "android";
     public static final String DM_REGISTERED = "dm_registered";
+
     public static final String[] GOOGLE_ACCOUNT_REQUIRED_SYNCABILITY_FEATURES =
             new String[] { "service_ah" };
-
     public static final String GOOGLE_ACCOUNT_TYPE = "com.google";
     public static final String LAST_SYNC = "last_sync";
     public static final String SERVER_LAST_SYNC = "server_last_sync";
+
     private static final String TAG = Config.makeLogTag(SyncAdapter.class);
 
     public static void clearSyncData(final Context context) {
@@ -70,7 +132,7 @@ public final class SyncAdapter extends AbstractThreadedSyncAdapter {
 
     public SyncAdapter(final Context context) {
         super(context, false);
-        assert(this.context != null);
+        assert (this.context != null);
         this.context = context;
     }
 
@@ -96,14 +158,10 @@ public final class SyncAdapter extends AbstractThreadedSyncAdapter {
     public void onPerformSync(final Account account, final Bundle extras,
             final String authority, final ContentProviderClient provider,
             final SyncResult syncResult) {
-        final boolean uploadOnly =
-                extras.getBoolean(ContentResolver.SYNC_EXTRAS_UPLOAD, false);
-        final boolean manualSync =
-                extras.getBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, false);
-        final boolean initialize =
-                extras.getBoolean(ContentResolver.SYNC_EXTRAS_INITIALIZE, false);
+        final OnPerformSyncBundle bundle = new OnPerformSyncBundle(extras);
         // TODO: C2DMReceiver.refreshAppC2DMRegistrationState(context);
-        Log.i(TAG, "Beginning " + (uploadOnly ? "upload-only" : "full")
+        Log.i(TAG, "Beginning "
+            + (bundle.getUploadOnly() ? "upload-only" : "full")
             + " sync for account " + account.name);
 
         // Read this account's sync metadata
@@ -131,8 +189,8 @@ public final class SyncAdapter extends AbstractThreadedSyncAdapter {
         final int deviceRegChange;
 
         if (autoSyncDesired != autoSyncEnabled
-            || lastRegistrationChangeTime > lastSyncTime || initialize
-            || manualSync) {
+            || lastRegistrationChangeTime > lastSyncTime
+            || bundle.getInitialize() || bundle.getManualSync()) {
 
             final String registrationId =
                     C2DMessaging.getRegistrationId(this.context);
@@ -157,7 +215,7 @@ public final class SyncAdapter extends AbstractThreadedSyncAdapter {
             catch (final PlaceHolderException e) {
                 logErrorMessage(
                         "Error generating device registration remote RPC parameters.",
-                        manualSync);
+                        bundle.getManualSync());
                 syncResult.stats.numIoExceptions++;
                 e.printStackTrace();
                 return;
@@ -166,7 +224,7 @@ public final class SyncAdapter extends AbstractThreadedSyncAdapter {
         else
             deviceRegChange = 0;
 
-        if (uploadOnly && PlaceHolder.hasNewStuffToUpload()
+        if (bundle.getUploadOnly() && PlaceHolder.hasNewStuffToUpload()
             && deviceRegChange == 0) {
             Log.i(TAG, "No local changes; upload-only sync canceled.");
             return;
@@ -174,14 +232,14 @@ public final class SyncAdapter extends AbstractThreadedSyncAdapter {
 
         // Set up the RPC sync calls
         try {
-            PlaceHolder.blockingAuthenticateAccount(account, manualSync
-                    ? Transceiver.NEED_AUTH_INTENT
+            PlaceHolder.blockingAuthenticateAccount(account, bundle
+                    .getManualSync() ? Transceiver.NEED_AUTH_INTENT
                     : Transceiver.NEED_AUTH_NOTIFICATION, false);
         }
         catch (final AuthenticationException e) {
             logErrorMessage(
                     "Authentication exception when attempting to sync.",
-                    manualSync);
+                    bundle.getManualSync());
             e.printStackTrace();
             syncResult.stats.numAuthExceptions++;
             return;
@@ -198,7 +256,7 @@ public final class SyncAdapter extends AbstractThreadedSyncAdapter {
         catch (final InvalidAuthTokenException e) {
             logErrorMessage(
                     "Invalid auth token provided by AccountManager when attempting to "
-                        + "sync.", manualSync);
+                        + "sync.", bundle.getManualSync());
             e.printStackTrace();
             syncResult.stats.numAuthExceptions++;
             return;
@@ -226,7 +284,7 @@ public final class SyncAdapter extends AbstractThreadedSyncAdapter {
 
                 provider.release();
                 logErrorMessage("Error calling remote note sync RPC",
-                        manualSync);
+                        bundle.getManualSync());
                 e.printStackTrace();
             }
 
@@ -247,7 +305,7 @@ public final class SyncAdapter extends AbstractThreadedSyncAdapter {
                     }
                     catch (final PlaceHolderException /* ParseException */e) {
                         logErrorMessage("Error parsing note sync RPC response",
-                                manualSync);
+                                bundle.getManualSync());
                         e.printStackTrace();
                         syncResult.stats.numParseExceptions++;
                         return;

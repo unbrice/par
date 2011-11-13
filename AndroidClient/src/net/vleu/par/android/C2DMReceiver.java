@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * Copyright 2010 Google Inc.
+ * Based on work copyright 2010 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,14 +32,9 @@
 
 package net.vleu.par.android;
 
-import net.vleu.par.PlaceHolder;
-import net.vleu.par.android.sync.SyncAdapter;
-import android.accounts.Account;
-import android.accounts.AccountManager;
-import android.content.ContentResolver;
+import net.vleu.par.android.sync.SyncController;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -47,73 +42,51 @@ import com.google.android.c2dm.C2DMBaseReceiver;
 import com.google.android.c2dm.C2DMessaging;
 
 /**
- * Broadcast receiver that handles Android Cloud to Data Messaging (AC2DM) messages, initiated
- * by the JumpNote App Engine server and routed/delivered by Google AC2DM servers. The
- * only currently defined message is 'sync'.
+ * Broadcast receiver that handles Android Cloud to Data Messaging (AC2DM)
+ * messages, initiated by the JumpNote App Engine server and routed/delivered by
+ * Google AC2DM servers. The only currently defined message is 'sync'.
  */
 public class C2DMReceiver extends C2DMBaseReceiver {
     static final String TAG = Config.makeLogTag(C2DMReceiver.class);
+
+    /**
+     * Register or unregister based on phone sync settings. Called on each
+     * performSync by the SyncAdapter.
+     */
+    public static void refreshAppC2DMRegistrationState(final Context context) {
+        // Determine if there are any auto-syncable accounts. If there are, make
+        // sure we are
+        // registered with the C2DM servers. If not, unregister the application.
+        final boolean autoSyncEnabled =
+                SyncController.isAutoSyncDesired(context);
+
+        final boolean c2dmRegistered =
+                !C2DMessaging.getRegistrationId(context).equals("");
+
+        if (c2dmRegistered != autoSyncEnabled) {
+            Log.i(TAG, "System-wide desirability for auto sync has changed; "
+                + (autoSyncEnabled ? "registering" : "unregistering")
+                + " application with C2DM servers.");
+
+            if (autoSyncEnabled == true)
+                C2DMessaging.register(context, Config.C2DM_SENDER);
+            else
+                C2DMessaging.unregister(context);
+        }
+    }
 
     public C2DMReceiver() {
         super(Config.C2DM_SENDER);
     }
 
     @Override
-    public void onError(Context context, String errorId) {
+    public void onError(final Context context, final String errorId) {
         Toast.makeText(context, "Messaging registration error: " + errorId,
                 Toast.LENGTH_LONG).show();
     }
 
     @Override
-    protected void onMessage(Context context, Intent intent) {
-        String accountName = intent.getExtras().getString(Config.C2DM_ACCOUNT_EXTRA);
-        String message = intent.getExtras().getString(Config.C2DM_MESSAGE_EXTRA);
-        if (Config.C2DM_MESSAGE_SYNC.equals(message)) {
-            if (accountName != null) {
-                if (Log.isLoggable(TAG, Log.DEBUG)) {
-                    Log.d(TAG, "Messaging request received for account " + accountName);
-                }
-
-                ContentResolver.requestSync(
-                        new Account(accountName, SyncAdapter.GOOGLE_ACCOUNT_TYPE),
-                        PlaceHolder.AUTHORITY, new Bundle());
-            }
-        }
-    }
-
-    /**
-     * Register or unregister based on phone sync settings.
-     * Called on each performSync by the SyncAdapter.
-     */
-    public static void refreshAppC2DMRegistrationState(Context context) {
-        // Determine if there are any auto-syncable accounts. If there are, make sure we are
-        // registered with the C2DM servers. If not, unregister the application.
-        boolean autoSyncDesired = false;
-        if (ContentResolver.getMasterSyncAutomatically()) {
-            AccountManager am = AccountManager.get(context);
-            Account[] accounts = am.getAccountsByType(SyncAdapter.GOOGLE_ACCOUNT_TYPE);
-            for (Account account : accounts) {
-                if (ContentResolver.getIsSyncable(account, PlaceHolder.AUTHORITY) > 0 &&
-                        ContentResolver.getSyncAutomatically(account, PlaceHolder.AUTHORITY)) {
-                    autoSyncDesired = true;
-                    break;
-                }
-            }
-        }
-
-        boolean autoSyncEnabled = !C2DMessaging.getRegistrationId(context).equals("");
-
-        if (autoSyncEnabled != autoSyncDesired) {
-            Log.i(TAG, "System-wide desirability for JumpNote auto sync has changed; " +
-                    (autoSyncDesired ? "registering" : "unregistering") +
-                    " application with C2DM servers.");
-
-            if (autoSyncDesired == true) {
-                C2DMessaging.register(context, Config.C2DM_SENDER);
-            } else {
-                C2DMessaging.unregister(context);
-            }
-        }
+    protected void onMessage(final Context context, final Intent intent) {
+        SyncController.requestBidirectionalSynchronization(context);
     }
 }
-
