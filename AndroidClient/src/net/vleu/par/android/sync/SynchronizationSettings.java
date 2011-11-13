@@ -22,8 +22,8 @@ import android.accounts.AccountManager;
 import android.content.ContentResolver;
 import android.content.Context;
 
-public final class SyncController {
-
+public final class SynchronizationSettings {
+    
     /**
      * Enables synchronization for this service (but if Master synchronization
      * is disabled, no data will be exchanged)
@@ -71,8 +71,8 @@ public final class SyncController {
     /** Triggers a synchronization if an account exists for this account */
     private static void requestSynchronization(final Context context,
             final boolean uploadOnly) {
-        final SyncAdapter.OnPerformSyncBundle bundle =
-                new SyncAdapter.OnPerformSyncBundle();
+        final Syncer.SynchronizationParameters bundle =
+                new Syncer.SynchronizationParameters();
         bundle.setManualSync(true);
         bundle.setUploadOnly(uploadOnly);
         final Account[] accounts = getGoogleAccounts(context);
@@ -90,6 +90,6 @@ public final class SyncController {
         requestSynchronization(context, true);
     }
 
-    private SyncController() {
+    private SynchronizationSettings() {
     }
 }

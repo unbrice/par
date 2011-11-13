@@ -2,6 +2,7 @@ package net.vleu.par.android.ui;
 
 import net.vleu.par.android.R;
 import net.vleu.par.android.preferences.Preferences;
+import net.vleu.par.android.sync.SynchronizationSettings;
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
@@ -71,8 +72,10 @@ public class PARAndroidClientActivity extends Activity {
                     public void onClick(final View ignored) {
                         final EditText input =
                                 (EditText) findViewById(R.id.main_set_device_name_edittext);
-                        PARAndroidClientActivity.this.prefs.setDeviceName(input
-                                .getText().toString());
+                        final String deviceName = input.getText().toString();
+                        PARAndroidClientActivity.this.prefs.setDeviceName(deviceName);
+                        SynchronizationSettings
+                                .requestUploadOnlySynchronization(PARAndroidClientActivity.this);
                     }
                 });
     }

@@ -46,14 +46,20 @@ public final class Preferences {
         public synchronized void onSharedPreferenceChanged(
                 final SharedPreferences sharedPreferences,
                 final String changedKey) {
-            for (final OnChangeListener listener : Preferences.this.listeners)
-                listener.onPreferencesChanged(changedKey);
+            if (!changedKey.equals(KEY_LAST_UPDATE_TIMESTAMP_MS)) {
+                setLastUpdateTimeToNow();
+                for (final OnChangeListener listener : Preferences.this.listeners)
+                    listener.onPreferencesChanged(changedKey);
+
+            }
         }
 
     }
 
     /** The key for the Device Name as presented to the user by the server */
     public static final String KEY_DEVICE_NAME = "device_name";
+    /** The key for the Unix timestamp of the last update */
+    private static final String KEY_LAST_UPDATE_TIMESTAMP_MS = "last_update_ms";
     /** The filename for the current version */
     private static final String PRIVATE_PREFERENCES_NAME = "version0";
     /**
@@ -61,7 +67,7 @@ public final class Preferences {
      * {@link #unregisterAllOnchangeListeners()} and
      * {@link #unregisterOnChangeListener(OnChangeListener)}
      */
-    @GuardedBy(value="itself")
+    @GuardedBy(value = "itself")
     private final ArrayList<OnChangeListener> listeners;
 
     // ThreadSafe
@@ -91,6 +97,13 @@ public final class Preferences {
         return this.privatePrefs.getString(KEY_DEVICE_NAME, Build.MODEL);
     }
 
+    /**
+     * @return The timestamp of the last modification
+     */
+    public long getLastUpdateTimeMs() {
+        return this.privatePrefs.getLong(KEY_LAST_UPDATE_TIMESTAMP_MS, 0);
+    }
+
     public void registerOnChangeListener(final OnChangeListener listener) {
         synchronized (this.listeners) {
             this.listeners.add(listener);
@@ -99,6 +112,17 @@ public final class Preferences {
 
     public void setDeviceName(final String newName) {
         this.privatePrefs.edit().putString(KEY_DEVICE_NAME, newName).commit();
+    }
+
+    /**
+     * Called by {@link #sharedPreferencesListener}
+     */
+    protected void setLastUpdateTimeToNow() {
+        // TODO: Use apply
+        this.privatePrefs
+                .edit()
+                .putLong(KEY_LAST_UPDATE_TIMESTAMP_MS,
+                        System.currentTimeMillis()).commit();
     }
 
     public void unregisterAllOnchangeListeners() {

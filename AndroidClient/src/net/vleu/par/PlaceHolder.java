@@ -2,6 +2,7 @@ package net.vleu.par;
 
 import net.vleu.par.android.Config;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData;
+import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.Builder;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayResponseData;
 import android.accounts.Account;
 import android.content.ContentResolver;
@@ -30,11 +31,12 @@ import android.util.Log;
  */
 public final class PlaceHolder {
     public static interface ExchangeWithServerCallack {
-        public void onError(int callIndex, PlaceHolderException e);
+        public void onServerError(GatewayRequestData request, PlaceHolderException e);
 
-        public void onResponse(GatewayResponseData resp);
+        public void onServerResponse(GatewayRequestData request, GatewayResponseData response);
     }
 
+    @SuppressWarnings("serial")
     public static class PlaceHolderException extends RuntimeException {
         private PlaceHolderException() {
 
@@ -54,6 +56,7 @@ public final class PlaceHolder {
         Log.w(TAG, "blockingAuthenticateAccount");
 
     }
+
 
     public static Uri buildNoteListUri(final String accountName) {
         return Uri.withAppendedPath(ROOT_URI, accountName == null
@@ -89,14 +92,16 @@ public final class PlaceHolder {
         return false;
     }
 
-    public static void registerDevice() {
+    public static void addDeviceRegistrationToRequest(Builder requestBuilder) {
         Log.w(TAG, "registerDevice");
     }
 
-    public static void unregisterDevice() {
-        Log.w(TAG, "unregisterDevice");
+    private PlaceHolder() {
     }
 
-    private PlaceHolder() {
+
+    public static void addGetDirectiveToRequest(Builder requestBuilder) {
+        Log.w(TAG, "addGetDirectiveToRequest");
+        
     }
 }

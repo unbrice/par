@@ -32,16 +32,15 @@
 package net.vleu.par.android.rpc;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
 import net.jcip.annotations.ThreadSafe;
 import net.vleu.par.android.Config;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData;
-import net.vleu.par.protocolbuffer.GatewayCommands.GatewayResponseData;
 
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpRequestFactory;
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthenticationException;
 import org.apache.http.client.ClientProtocolException;
@@ -49,6 +48,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.message.BasicNameValuePair;
@@ -56,6 +56,7 @@ import org.apache.http.message.BasicNameValuePair;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.accounts.AccountManagerCallback;
+import android.accounts.AccountManagerFuture;
 import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
 import android.app.Activity;
@@ -65,41 +66,17 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.net.ConnectivityManager;
 import android.os.Bundle;
-import java.net.URI;
-import java.net.URISyntaxException;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import android.accounts.AccountManagerCallback;
-import android.accounts.AccountManagerFuture;
-
 
 @ThreadSafe
 public final class Transceiver {
-    public static final String APPENGINE_SERVICE_NAME = "ah";
+    public static interface EnsureHasTokenWithUICallback {
+        public void onAuthDenied();
 
-    public static final int NEED_AUTH_NOTIFICATION = 1;
-    public static final int NEED_AUTH_INTENT = 2;
+        public void onError(Throwable e);
 
-    private final Context mContext;
-
-    private final TokenStoreHelper mTokenStoreHelper;
-
-    private final String mAuthUrlTemplate;
-
-    private final DefaultHttpClient mHttpClient;
-
-    public Transceiver(Context context, String authUrlTemplate, String rpcUrl) {
-        mContext = context;
-        mAuthUrlTemplate = authUrlTemplate;
-        mTokenStoreHelper = new TokenStoreHelper(context);
-        mHttpClient = new DefaultHttpClient();
+        public void onHasToken(String authToken);
     }
-    
-
-    @SuppressWarnings("serial")
-    public static class RequestedUserAuthenticationException extends Exception {}
 
     @SuppressWarnings("serial")
     public static class InvalidAuthTokenException extends Exception {
@@ -107,210 +84,264 @@ public final class Transceiver {
             super();
         }
 
-        public InvalidAuthTokenException(String message) {
+        public InvalidAuthTokenException(final String message) {
             super(message);
         }
     }
 
-    public void postData(GatewayRequestData request) {
-        // Create a new HttpClient and Post Header
-        HttpClient httpclient = new DefaultHttpClient();
-        HttpPost httppost = new HttpPost("http://www.yoursite.com/script.php");
-
-        try {
-            // Add your data
-            ArrayList<BasicNameValuePair> nameValuePairs = new ArrayList<BasicNameValuePair>(2);
-            nameValuePairs.add(new BasicNameValuePair("id", "12345"));
-            nameValuePairs.add(new BasicNameValuePair("stringdata", "AndDev is Cool!"));
-            httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-
-            // Execute HTTP Post Request
-            HttpResponse response = httpclient.execute(httppost);
-            
-        } catch (ClientProtocolException e) {
-            // TODO Auto-generated catch block
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-        }
-    }
-    
-    public void blockingAuthenticateAccount(final Account account, final int needAuthAction,
-            boolean forceReauthenticate) throws AuthenticationException, OperationCanceledException,
-            RequestedUserAuthenticationException, InvalidAuthTokenException {
-
-        String existingToken = mTokenStoreHelper.getToken(account);
-        if (!forceReauthenticate && existingToken != null) {
-            BasicClientCookie c = new BasicClientCookie("ACSID", existingToken);
-            try {
-                c.setDomain(new URI(Config.SERVER_BASE_URL).getHost());
-                mHttpClient.getCookieStore().addCookie(c);
-                return;
-            } catch (URISyntaxException e) {
-            }
-        }
-
-        // Get an auth token for this account.
-        AccountManager am = AccountManager.get(mContext);
-        Bundle authBundle = null;
-        String authToken = null;
-
-        // Block on getting the auth token result.
-        try {
-            authBundle = am.getAuthToken(account, APPENGINE_SERVICE_NAME,
-                    needAuthAction == NEED_AUTH_NOTIFICATION, null, null).getResult();
-        } catch (IOException e) {
-            throw new AuthenticationException("IOException while getting auth token.", e);
-        } catch (AuthenticatorException e) {
-            throw new AuthenticationException("AuthenticatorException while getting auth token.", e);
-        }
-
-        if (authBundle.containsKey(AccountManager.KEY_INTENT) &&
-                needAuthAction == NEED_AUTH_INTENT) {
-            Intent authRequestIntent = (Intent) authBundle.get(AccountManager.KEY_INTENT);
-            mContext.startActivity(authRequestIntent);
-            throw new RequestedUserAuthenticationException();
-        } else if (authBundle.containsKey(AccountManager.KEY_AUTHTOKEN)) {
-            authToken = authBundle.getString(AccountManager.KEY_AUTHTOKEN);
-        }
-
-        if (authToken == null) {
-            throw new AuthenticationException("Retrieved auth token was null.");
-        }
-
-        try {
-            blockingAuthenticateWithToken(account, authToken);
-        } catch (InvalidAuthTokenException e) {
-            am.invalidateAuthToken(account.type, authToken);
-            throw e;
-        }
-    }
-
-    private void blockingAuthenticateWithToken(Account account, String authToken)
-            throws AuthenticationException, InvalidAuthTokenException {
-        // Promote the given auth token into an App Engine ACSID token.
-        HttpGet httpGet = new HttpGet(String.format(mAuthUrlTemplate, authToken));
-        String acsidToken = null;
-
-        try {
-            HttpResponse response = mHttpClient.execute(httpGet);
-            if (response.getStatusLine().getStatusCode() == 403) {
-                throw new InvalidAuthTokenException();
-            }
-
-            List<Cookie> cookies = mHttpClient.getCookieStore().getCookies();
-            for (Cookie cookie : cookies) {
-                if (cookie.getName().equals("ACSID")) {
-                    acsidToken = cookie.getValue();
-                    break;
-                }
-            }
-
-            if (acsidToken == null && response.getStatusLine().getStatusCode() == 500) {
-                // If no ACSID cookie was passed, it usually means the auth token was invalid;
-                throw new InvalidAuthTokenException("ACSID cookie not found in HTTP response: " +
-                        response.getStatusLine().toString() + "; assuming invalid auth token.");
-            }
-
-            mTokenStoreHelper.putToken(account, acsidToken);
-        } catch (ClientProtocolException e) {
-            throw new AuthenticationException("HTTP Protocol error authenticating to App Engine", e);
-        } catch (IOException e) {
-            throw new AuthenticationException("IOException authenticating to App Engine", e);
-        }
-    }
-
-    public static void ensureHasTokenWithUI(Activity activity, Account account,
-            final EnsureHasTokenWithUICallback callback) {
-        AccountManager am = AccountManager.get(activity);
-        am.getAuthToken(account, APPENGINE_SERVICE_NAME, null, activity,
-                new AccountManagerCallback<Bundle>() {
-                    public void run(AccountManagerFuture<Bundle> authBundleFuture) {
-                        Bundle authBundle = null;
-                        try {
-                            authBundle = authBundleFuture.getResult();
-                        } catch (OperationCanceledException e) {
-                            callback.onAuthDenied();
-                            return;
-                        } catch (AuthenticatorException e) {
-                            callback.onError(e);
-                            return;
-                        } catch (IOException e) {
-                            callback.onError(e);
-                            return;
-                        }
-
-                        if (authBundle.containsKey(AccountManager.KEY_AUTHTOKEN)) {
-                            callback.onHasToken((String) authBundle
-                                    .get(AccountManager.KEY_AUTHTOKEN));
-                        } else {
-                            callback.onError(new IllegalStateException(
-                                    "No auth token available, but operation not canceled."));
-                        }
-                    }
-                }, null);
-    }
-
-    public void invalidateAccountAcsidToken(Account account) {
-        mTokenStoreHelper.invalidateToken(account);
-    }
-
-    public static interface EnsureHasTokenWithUICallback {
-        public void onAuthDenied();
-        public void onHasToken(String authToken);
-        public void onError(Throwable e);
+    @SuppressWarnings("serial")
+    public static class RequestedUserAuthenticationException extends Exception {
     }
 
     /**
-     * This class helps manage stored ACSID tokens.
-     * TODO: use a persistent cookie store instead of this intermediate structure
+     * This class helps manage stored ACSID tokens. TODO: use a persistent
+     * cookie store instead of this intermediate structure
      */
     private static class TokenStoreHelper extends SQLiteOpenHelper {
+        private static final String[] ALL_COLUMNS = new String[] { "account",
+                "token" };
         private static final String TABLE_NAME = "tokens";
-        private static final String[] ALL_COLUMNS = new String[] { "account", "token" };
 
-        TokenStoreHelper(Context context) {
+        TokenStoreHelper(final Context context) {
             super(context, "tokens.db", null, 1);
         }
 
-        @Override
-        public void onCreate(SQLiteDatabase db) {
-            db.execSQL("CREATE TABLE " + TABLE_NAME + " (account TEXT UNIQUE, token TEXT);");
-        }
-
-        @Override
-        public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
-            onCreate(db);
-        }
-
-        public void putToken(Account account, String token) {
-            SQLiteDatabase db = getWritableDatabase();
-            ContentValues values = new ContentValues();
-            values.put("account", account.name);
-            values.put("token", token);
-            db.insertWithOnConflict(TABLE_NAME, null, values, SQLiteDatabase.CONFLICT_REPLACE);
-            db.close();
-        }
-
-        public String getToken(Account account) {
-            SQLiteDatabase db = getReadableDatabase();
-            Cursor c = db.query(TABLE_NAME, ALL_COLUMNS, "account = ?",
-                    new String[]{ account.name }, null, null, null);
+        public String getToken(final Account account) {
+            final SQLiteDatabase db = getReadableDatabase();
+            final Cursor c =
+                    db.query(TABLE_NAME, ALL_COLUMNS, "account = ?",
+                            new String[] { account.name }, null, null, null);
             if (!c.moveToNext()) {
                 c.close();
                 db.close();
                 return null;
             }
-            String token = c.getString(1);
+            final String token = c.getString(1);
             c.close();
             db.close();
             return token;
         }
 
-        public void invalidateToken(Account account) {
-            SQLiteDatabase db = getWritableDatabase();
-            db.delete(TABLE_NAME, "account = ?", new String[]{ account.name });
+        public void invalidateToken(final Account account) {
+            final SQLiteDatabase db = getWritableDatabase();
+            db.delete(TABLE_NAME, "account = ?", new String[] { account.name });
             db.close();
+        }
+
+        @Override
+        public void onCreate(final SQLiteDatabase db) {
+            db.execSQL("CREATE TABLE " + TABLE_NAME
+                + " (account TEXT UNIQUE, token TEXT);");
+        }
+
+        @Override
+        public void onUpgrade(final SQLiteDatabase db, final int oldVersion,
+                final int newVersion) {
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
+            onCreate(db);
+        }
+
+        public void putToken(final Account account, final String token) {
+            final SQLiteDatabase db = getWritableDatabase();
+            final ContentValues values = new ContentValues();
+            values.put("account", account.name);
+            values.put("token", token);
+            db.insertWithOnConflict(TABLE_NAME, null, values,
+                    SQLiteDatabase.CONFLICT_REPLACE);
+            db.close();
+        }
+    }
+
+    public static final String APPENGINE_SERVICE_NAME = "ah";
+
+    public static final int NEED_AUTH_INTENT = 2;
+
+    public static final int NEED_AUTH_NOTIFICATION = 1;
+
+    public static void ensureHasTokenWithUI(final Activity activity,
+            final Account account, final EnsureHasTokenWithUICallback callback) {
+        final AccountManager am = AccountManager.get(activity);
+        am.getAuthToken(account, APPENGINE_SERVICE_NAME, null, activity,
+                new AccountManagerCallback<Bundle>() {
+                    @Override
+                    public
+                            void
+                            run(final AccountManagerFuture<Bundle> authBundleFuture) {
+                        Bundle authBundle = null;
+                        try {
+                            authBundle = authBundleFuture.getResult();
+                        }
+                        catch (final OperationCanceledException e) {
+                            callback.onAuthDenied();
+                            return;
+                        }
+                        catch (final AuthenticatorException e) {
+                            callback.onError(e);
+                            return;
+                        }
+                        catch (final IOException e) {
+                            callback.onError(e);
+                            return;
+                        }
+
+                        if (authBundle
+                                .containsKey(AccountManager.KEY_AUTHTOKEN))
+                            callback.onHasToken((String) authBundle
+                                    .get(AccountManager.KEY_AUTHTOKEN));
+                        else
+                            callback.onError(new IllegalStateException(
+                                    "No auth token available, but operation not canceled."));
+                    }
+                }, null);
+    }
+
+    private final String mAuthUrlTemplate;
+
+    private final Context mContext;
+
+    private final DefaultHttpClient mHttpClient;
+
+    private final TokenStoreHelper mTokenStoreHelper;
+
+    public Transceiver(final Context context, final String authUrlTemplate,
+            final String rpcUrl) {
+        this.mContext = context;
+        this.mAuthUrlTemplate = authUrlTemplate;
+        this.mTokenStoreHelper = new TokenStoreHelper(context);
+        this.mHttpClient = new DefaultHttpClient();
+    }
+
+    public void blockingAuthenticateAccount(final Account account,
+            final int needAuthAction, final boolean forceReauthenticate)
+            throws AuthenticationException, OperationCanceledException,
+            RequestedUserAuthenticationException, InvalidAuthTokenException {
+
+        final String existingToken = this.mTokenStoreHelper.getToken(account);
+        if (!forceReauthenticate && existingToken != null) {
+            final BasicClientCookie c =
+                    new BasicClientCookie("ACSID", existingToken);
+            try {
+                c.setDomain(new URI(Config.SERVER_BASE_URL).getHost());
+                this.mHttpClient.getCookieStore().addCookie(c);
+                return;
+            }
+            catch (final URISyntaxException e) {
+            }
+        }
+
+        // Get an auth token for this account.
+        final AccountManager am = AccountManager.get(this.mContext);
+        Bundle authBundle = null;
+        String authToken = null;
+
+        // Block on getting the auth token result.
+        try {
+            authBundle =
+                    am.getAuthToken(account, APPENGINE_SERVICE_NAME,
+                            needAuthAction == NEED_AUTH_NOTIFICATION, null,
+                            null).getResult();
+        }
+        catch (final IOException e) {
+            throw new AuthenticationException(
+                    "IOException while getting auth token.", e);
+        }
+        catch (final AuthenticatorException e) {
+            throw new AuthenticationException(
+                    "AuthenticatorException while getting auth token.", e);
+        }
+
+        if (authBundle.containsKey(AccountManager.KEY_INTENT)
+            && needAuthAction == NEED_AUTH_INTENT) {
+            final Intent authRequestIntent =
+                    (Intent) authBundle.get(AccountManager.KEY_INTENT);
+            this.mContext.startActivity(authRequestIntent);
+            throw new RequestedUserAuthenticationException();
+        }
+        else if (authBundle.containsKey(AccountManager.KEY_AUTHTOKEN))
+            authToken = authBundle.getString(AccountManager.KEY_AUTHTOKEN);
+
+        if (authToken == null)
+            throw new AuthenticationException("Retrieved auth token was null.");
+
+        try {
+            blockingAuthenticateWithToken(account, authToken);
+        }
+        catch (final InvalidAuthTokenException e) {
+            am.invalidateAuthToken(account.type, authToken);
+            throw e;
+        }
+    }
+
+    private void blockingAuthenticateWithToken(final Account account,
+            final String authToken) throws AuthenticationException,
+            InvalidAuthTokenException {
+        // Promote the given auth token into an App Engine ACSID token.
+        final HttpGet httpGet =
+                new HttpGet(String.format(this.mAuthUrlTemplate, authToken));
+        String acsidToken = null;
+
+        try {
+            final HttpResponse response = this.mHttpClient.execute(httpGet);
+            if (response.getStatusLine().getStatusCode() == 403)
+                throw new InvalidAuthTokenException();
+
+            final List<Cookie> cookies =
+                    this.mHttpClient.getCookieStore().getCookies();
+            for (final Cookie cookie : cookies)
+                if (cookie.getName().equals("ACSID")) {
+                    acsidToken = cookie.getValue();
+                    break;
+                }
+
+            if (acsidToken == null
+                && response.getStatusLine().getStatusCode() == 500)
+                // If no ACSID cookie was passed, it usually means the auth
+                // token was invalid;
+                throw new InvalidAuthTokenException(
+                        "ACSID cookie not found in HTTP response: "
+                            + response.getStatusLine().toString()
+                            + "; assuming invalid auth token.");
+
+            this.mTokenStoreHelper.putToken(account, acsidToken);
+        }
+        catch (final ClientProtocolException e) {
+            throw new AuthenticationException(
+                    "HTTP Protocol error authenticating to App Engine", e);
+        }
+        catch (final IOException e) {
+            throw new AuthenticationException(
+                    "IOException authenticating to App Engine", e);
+        }
+    }
+
+    public void invalidateAccountAcsidToken(final Account account) {
+        this.mTokenStoreHelper.invalidateToken(account);
+    }
+
+    public void postData(final GatewayRequestData request) {
+        // Create a new HttpClient and Post Header
+        final HttpClient httpclient = new DefaultHttpClient();
+        final HttpPost httppost =
+                new HttpPost("http://www.yoursite.com/script.php");
+
+        try {
+            // Add your data
+            final ArrayList<BasicNameValuePair> nameValuePairs =
+                    new ArrayList<BasicNameValuePair>(2);
+            nameValuePairs.add(new BasicNameValuePair("id", "12345"));
+            nameValuePairs.add(new BasicNameValuePair("stringdata",
+                    "AndDev is Cool!"));
+            httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+
+            // Execute HTTP Post Request
+            final HttpResponse response = httpclient.execute(httppost);
+
+        }
+        catch (final ClientProtocolException e) {
+            // TODO Auto-generated catch block
+        }
+        catch (final IOException e) {
+            // TODO Auto-generated catch block
         }
     }
 

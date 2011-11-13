@@ -27,7 +27,7 @@ import android.os.IBinder;
 import android.util.Log;
 
 /**
- * Service that handles sync. It simply instantiates a SyncAdapter and returns
+ * Android Service that handles sync. It simply instantiates a SyncAdapter and returns
  * its IBinder.
  */
 @ThreadSafe
