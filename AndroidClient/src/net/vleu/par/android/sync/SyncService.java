@@ -14,14 +14,18 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package net.vleu.par.android;
+package net.vleu.par.android.sync;
 
 import java.lang.ref.SoftReference;
 
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
-import net.vleu.par.android.sync.SyncAdapter;
+import net.vleu.par.android.Config;
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.app.Service;
+import android.content.ContentResolver;
+import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
 import android.util.Log;
@@ -57,7 +61,6 @@ public class SyncService extends Service {
 
     @Override
     public IBinder onBind(final Intent intent) {
-        Log.d(TAG, "Binding");
         return getOrInstantiateSyncAdapter().getSyncAdapterBinder();
     }
 }

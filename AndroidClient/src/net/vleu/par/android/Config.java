@@ -26,6 +26,8 @@ public final class Config  {
     public static final String C2DM_ACCOUNT_EXTRA = "account_name";
     public static final String C2DM_MESSAGE_EXTRA = "message";
     public static final String C2DM_MESSAGE_SYNC = "sync";
+    public static final String SYNC_AUTHORITY = "net.vleu.par.android";
+    public static final String GOOGLE_ACCOUNT_TYPE = "com.google";
 
     public static final String SERVER_BASE_URL = "http://jumpnote.appspot.com";
     public static final String SERVER_RPC_URL = SERVER_BASE_URL + "/jumpnoterpc";

@@ -17,7 +17,7 @@
 -->
 <resources>
     <string name="app_description">At last, an energy-efficient and reliable way to remote your device!</string>
-    <string name="app_name">PARAndroidClient</string>
+    <string name="app_name">Proper Android Remote</string>
     <string name="main_instructions_title">Instructions</string>
     <string name="main_instructions">INSTRUCTIONS: TODO</string>
     <string name="main_set_device_name_button_title">Set</string>

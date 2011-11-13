@@ -16,6 +16,7 @@
  */
 package net.vleu.par.android.sync;
 
+import net.jcip.annotations.ThreadSafe;
 import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -25,21 +26,26 @@ import android.net.Uri;
  * It seems necessary to have a Content Provider in order to propose a sync
  * service. Even if it does nothing.
  */
+/*
+ * Note: it has android:multiprocess set to true precisely because it has no
+ * state. If it were to have one, this value might need to be changed.
+ */
+@ThreadSafe
 public final class EmptyContentProvider extends ContentProvider {
 
-    
     @Override
-    public int delete(Uri uri, String selection, String[] selectionArgs) {
+    public int delete(final Uri uri, final String selection,
+            final String[] selectionArgs) {
         throw new IllegalArgumentException("Unsupported URI: " + uri);
     }
 
     @Override
-    public String getType(Uri uri) {
+    public String getType(final Uri uri) {
         throw new IllegalArgumentException("Unsupported URI: " + uri);
     }
 
     @Override
-    public Uri insert(Uri uri, ContentValues values) {
+    public Uri insert(final Uri uri, final ContentValues values) {
         throw new IllegalArgumentException("Unsupported URI: " + uri);
     }
 
@@ -49,14 +55,15 @@ public final class EmptyContentProvider extends ContentProvider {
     }
 
     @Override
-    public Cursor query(Uri uri, String[] projection, String selection,
-            String[] selectionArgs, String sortOrder) {
+    public Cursor query(final Uri uri, final String[] projection,
+            final String selection, final String[] selectionArgs,
+            final String sortOrder) {
         return null;
     }
 
     @Override
-    public int update(Uri uri, ContentValues values, String selection,
-            String[] selectionArgs) {
+    public int update(final Uri uri, final ContentValues values,
+            final String selection, final String[] selectionArgs) {
         throw new IllegalArgumentException("Unsupported URI: " + uri);
     }
 

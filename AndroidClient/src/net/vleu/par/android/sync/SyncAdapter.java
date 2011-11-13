@@ -123,7 +123,7 @@ public final class SyncAdapter extends AbstractThreadedSyncAdapter {
         final boolean autoSyncDesired =
                 ContentResolver.getMasterSyncAutomatically()
                     && ContentResolver.getSyncAutomatically(account,
-                            PlaceHolder.AUTHORITY);
+                            Config.SYNC_AUTHORITY);
         final boolean autoSyncEnabled =
                 syncMeta.getBoolean(DM_REGISTERED, false);
 

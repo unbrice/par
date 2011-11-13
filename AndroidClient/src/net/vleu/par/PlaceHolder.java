@@ -1,5 +1,6 @@
 package net.vleu.par;
 
+import net.vleu.par.android.Config;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayResponseData;
 import android.accounts.Account;
@@ -58,11 +59,8 @@ public final class PlaceHolder {
         return uri.getPathSegments().get(1);
     }
 
-
-    public static final String AUTHORITY = "net.vleu.par.android";
-
     public static final Uri ROOT_URI = new Uri.Builder()
-            .scheme(ContentResolver.SCHEME_CONTENT).authority(AUTHORITY)
+            .scheme(ContentResolver.SCHEME_CONTENT).authority(Config.SYNC_AUTHORITY)
             .appendPath("notes").build();
 
     private static final String TAG = "PlaceHolder";
