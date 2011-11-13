@@ -147,13 +147,17 @@ public class DeviceWaker {
         final Key deviceKey = DeviceEntity.keyForIds(ownerId, deviceId);
         final Entity deviceEntity = this.datastores.get().get(null, deviceKey);
         final Device device = DeviceEntity.deviceFromEntity(deviceEntity);
-        final String c2dmRegistrationId = device.getC2dmRegistrationId();
-        final HTTPRequest request =
-                this.requestFactory.buildRequest(c2dmRegistrationId);
-        final HTTPResponse response = this.urlFetchService.get().fetch(request);
-        if (response.getResponseCode() != 200)
-            throw new IOException("The C2DM server anwsered a "
-                + response.getResponseCode() + " error.");
-        System.out.println("Response code: " + response.getResponseCode());
+        if (device.hasC2dmRegistrationId()) {
+            final String c2dmRegistrationId = device.getC2dmRegistrationId();
+            final HTTPRequest request =
+                    this.requestFactory.buildRequest(c2dmRegistrationId);
+            final HTTPResponse response = this.urlFetchService.get().fetch(request);
+            if (response.getResponseCode() != 200)
+                throw new IOException("The C2DM server anwsered a "
+                    + response.getResponseCode() + " error.");
+        }
+        else {
+            LOG.finest("Won't wake the device because it is not registered with C2DM");
+        }
     }
 }

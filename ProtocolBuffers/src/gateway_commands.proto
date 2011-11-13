@@ -30,7 +30,8 @@ import "devices.proto";
 message GatewayRequestData {
 	message RegisterDeviceData {
 		required DeviceIdData deviceId = 1;
-		required string c2dm_registration_id = 2;
+		/* If absent, C2DM is disabled for this device */
+		optional string c2dm_registration_id = 2;
 	}
 	message QueueDirectiveData {
 		required DeviceIdData deviceId = 1;

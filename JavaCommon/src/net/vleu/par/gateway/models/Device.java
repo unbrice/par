@@ -21,6 +21,20 @@ public final class Device {
     private String c2dmRegistrationId;
     private final DeviceId id;
 
+    /**
+     * @param id
+     *            Cannot be null
+     */
+    public Device(final DeviceId id) {
+        this(id, null);
+    }
+
+    /**
+     * @param id
+     *            Cannot be null
+     * @param c2dmRegistrationId
+     *            Null if the device is not registered
+     */
     public Device(final DeviceId id, final String c2dmRegistrationId) {
         this.id = id;
         this.c2dmRegistrationId = c2dmRegistrationId;
@@ -40,11 +54,19 @@ public final class Device {
 
     /** @return access token for using C2DM with this device */
     public String getC2dmRegistrationId() {
-        return this.c2dmRegistrationId;
+        if (!hasC2dmRegistrationId())
+            throw new IllegalStateException("No C2DM Registration ID");
+        else
+            return this.c2dmRegistrationId;
     }
 
     public DeviceId getId() {
         return this.id;
+    }
+
+    public boolean hasC2dmRegistrationId() {
+        return (this.c2dmRegistrationId != null)
+            && (this.c2dmRegistrationId.length() > 0);
     }
 
     @Override
@@ -56,9 +78,9 @@ public final class Device {
      * Sets the access token for using C2DM with this device
      * 
      * @param c2dmRegistrationId
-     *            Access token for using C2DM with this device
+     *            Access token for using C2DM with this device, or null
      */
-    public void setC2dmRegistrationId(final String c2dmRegistrationId) {
+    protected void setC2dmRegistrationId(final String c2dmRegistrationId) {
         this.c2dmRegistrationId = c2dmRegistrationId;
     }
 }

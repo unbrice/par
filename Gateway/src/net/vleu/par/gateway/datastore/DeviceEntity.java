@@ -25,9 +25,9 @@ import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.Query;
 
 public final class DeviceEntity {
-    public static final String C2DM_REGISTRATION_ID_PROPERTY =
-            "c2dmRegistrationId";
-    public static final String KIND = "Device";
+    /** Undefined if the device is not registered */
+    static final String C2DM_REGISTRATION_ID_PROPERTY = "c2dmRegistrationId";
+    static final String KIND = "Device";
 
     static Query buildQueryForOwnedDevices(final UserId ownerId) {
         final Key parentKey = UserEntity.keyForId(ownerId);
@@ -49,8 +49,9 @@ public final class DeviceEntity {
         final Key deviceKey = keyForIds(ownerId, device.getId());
         final Entity res =
                 new Entity(KIND, deviceKey.getName(), deviceKey.getParent());
-        res.setUnindexedProperty(C2DM_REGISTRATION_ID_PROPERTY,
-                device.getC2dmRegistrationId());
+        if (device.hasC2dmRegistrationId())
+            res.setUnindexedProperty(C2DM_REGISTRATION_ID_PROPERTY,
+                    device.getC2dmRegistrationId());
         return res;
     }
 
