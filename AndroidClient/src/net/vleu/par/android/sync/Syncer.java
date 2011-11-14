@@ -315,8 +315,9 @@ final class Syncer {
         try {
             PlaceHolder.blockingAuthenticateAccount(this.account,
                     this.parameters.getManualSync()
-                            ? Transceiver.NEED_AUTH_INTENT
-                            : Transceiver.NEED_AUTH_NOTIFICATION, false);
+                            ? Transceiver.AuthUiChoice.USE_INTENT
+                            : Transceiver.AuthUiChoice.USE_NOTIFICATION,
+                            false);
         }
         catch (final AuthenticationException e) {
             logOrDisplayErrorMessage("Authentication exception when attempting to sync.");
@@ -348,6 +349,8 @@ final class Syncer {
                 calledAfterExchange);
 
     }
+    
+
 
     /**
      * Updates the C2DM token of the last synchronization

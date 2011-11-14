@@ -47,7 +47,6 @@ public final class SyncAdapter extends AbstractThreadedSyncAdapter {
 
     SyncAdapter(final Context context) {
         super(context, false);
-        assert (this.context != null);
         this.context = context;
         this.preferences = new Preferences(this.context);
     }

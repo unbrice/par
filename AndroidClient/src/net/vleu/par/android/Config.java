@@ -29,9 +29,9 @@ public final class Config  {
     public static final String SYNC_AUTHORITY = "net.vleu.par.android";
     public static final String GOOGLE_ACCOUNT_TYPE = "com.google";
 
-    public static final String SERVER_BASE_URL = "http://jumpnote.appspot.com";
-    public static final String SERVER_RPC_URL = SERVER_BASE_URL + "/jumpnoterpc";
-    public static final String SERVER_AUTH_URL_TEMPLATE = SERVER_BASE_URL + "/_ah/login?auth=%s";
+    public static final String SERVER_DOMAIN = "vleupar.appengine.com";
+    public static final String SERVER_BASE_URL = "https://" + SERVER_DOMAIN;
+    public static final String SERVER_RPC_URL = SERVER_BASE_URL + "/api/0";
 
     /**
      * Enabling this is will turn on sync UI icons that notify the user of pending and active sync

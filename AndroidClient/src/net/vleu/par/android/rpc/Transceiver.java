@@ -32,26 +32,28 @@
 package net.vleu.par.android.rpc;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
+import java.io.InputStream;
 import java.util.List;
 
 import net.jcip.annotations.ThreadSafe;
+import net.vleu.par.PlaceHolder.PlaceHolderException;
+import net.vleu.par.WrappedString;
 import net.vleu.par.android.Config;
+import net.vleu.par.android.rpc.Transceiver.AuthUiChoice;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData;
+import net.vleu.par.protocolbuffer.GatewayCommands.GatewayResponseData;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthenticationException;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.params.ClientPNames;
 import org.apache.http.cookie.Cookie;
+import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.cookie.BasicClientCookie;
-import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpParams;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
@@ -60,116 +62,178 @@ import android.accounts.AccountManagerFuture;
 import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
 import android.app.Activity;
-import android.content.ContentValues;
 import android.content.Context;
-import android.content.Intent;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Bundle;
+import android.util.Log;
 
 @ThreadSafe
 public final class Transceiver {
-    public static interface EnsureHasTokenWithUICallback {
-        public void onAuthDenied();
+    /**
+     * Simple wrapper for an ACSID token, as per Google App Engine
+     */
+    public static final class AcsidToken extends WrappedString {
+        public AcsidToken(final String value) {
+            super(value);
+        }
 
-        public void onError(Throwable e);
-
-        public void onHasToken(String authToken);
+        public Cookie asCookie() {
+            final BasicClientCookie cookie =
+                    new BasicClientCookie("ACSID", this.value);
+            cookie.setDomain(Config.SERVER_DOMAIN);
+            return cookie;
+        }
     }
 
+    public static interface AuthentifyWithUICallback {
+        public void onAuthDenied();
+
+        /**
+         * Called with the Google auth token when the authentication succeeds
+         * 
+         * @param authToken
+         *            The Google auth token
+         */
+        public void onHasToken(GoogleAuthToken authToken);
+
+        /**
+         * Called when the authenticator failed to respond
+         */
+        public void onLocalError(AuthenticatorException e);
+
+        /**
+         * Called if there is a bug in the {@link Transceiver}'s code
+         * 
+         * @param e
+         *            Its message should give indication about the bug
+         */
+        public void onLocalError(InternalError e);
+
+        /**
+         * Called if the authenticator experienced an I/O problem creating a new
+         * auth token, usually because of network trouble
+         */
+        public void onLocalError(IOException e);
+    }
+
+    /**
+     * Allows to select the way that will be used to communicate with the user
+     */
+    public enum AuthUiChoice {
+        USE_INTENT, USE_NOTIFICATION
+    }
+
+    public static interface ExchangeWithServerCallback {
+
+        /**
+         * Called when the authenticator failed to respond
+         */
+        public void onLocalError(AuthenticatorException e);
+
+        /**
+         * Called if there is a bug in the {@link Transceiver}'s code
+         * 
+         * @param e
+         *            Its message should give indication about the bug
+         */
+        public void onLocalError(InternalError e);
+
+        /**
+         * Called if the request was canceled by the user
+         */
+        public void onLocalError(OperationCanceledException e);
+
+        /**
+         * Called if the authenticator experienced an I/O problem creating a new
+         * auth token, usually because of network trouble
+         */
+        public void onNetworkError(IOException e);
+
+        public void onServerError(GatewayRequestData request,
+                PlaceHolderException e);
+
+        public void onServerResponse(GatewayRequestData request,
+                GatewayResponseData response);
+
+    }
+
+    /**
+     * Simple wrapper for a Google authentication token, as per Android's
+     * authentication managers
+     */
+    public static final class GoogleAuthToken extends WrappedString {
+        public GoogleAuthToken(final String value) {
+            super(value);
+        }
+    }
+
+    /**
+     * Used to signal that a GoogleAuthToken is invalid
+     */
     @SuppressWarnings("serial")
-    public static class InvalidAuthTokenException extends Exception {
-        public InvalidAuthTokenException() {
+    public static class InvalidGoogleAuthTokenException extends Exception {
+        public InvalidGoogleAuthTokenException() {
             super();
         }
 
-        public InvalidAuthTokenException(final String message) {
+        public InvalidGoogleAuthTokenException(final String message) {
             super(message);
         }
     }
 
+    /**
+     * Thrown by
+     * {@link Transceiver#blockingAuthenticateAccount(Account, AuthUiChoice, boolean)}
+     * when the authenticating the token requires an user interaction.
+     * 
+     * It means that the authentication should be retried later, possibly after
+     * the user answered.
+     */
     @SuppressWarnings("serial")
     public static class RequestedUserAuthenticationException extends Exception {
     }
 
+    private static final String APPENGINE_TOKEN_TYPE = "ah";
+
     /**
-     * This class helps manage stored ACSID tokens. TODO: use a persistent
-     * cookie store instead of this intermediate structure
+     * Can be used as an argument to {@link HttpGet#setParams(HttpParams)} to
+     * disable redirections
      */
-    private static class TokenStoreHelper extends SQLiteOpenHelper {
-        private static final String[] ALL_COLUMNS = new String[] { "account",
-                "token" };
-        private static final String TABLE_NAME = "tokens";
+    private static final HttpParams HTTP_PARAMS_NO_REDIRECTIONS =
+            (new BasicHttpParams()).setBooleanParameter(
+                    ClientPNames.HANDLE_REDIRECTS, false);
 
-        TokenStoreHelper(final Context context) {
-            super(context, "tokens.db", null, 1);
-        }
+    private static final String SERVER_AUTH_URL_PREFIX = Config.SERVER_BASE_URL
+        + "/_ah/login?continue=http://localhost/&auth=";
 
-        public String getToken(final Account account) {
-            final SQLiteDatabase db = getReadableDatabase();
-            final Cursor c =
-                    db.query(TABLE_NAME, ALL_COLUMNS, "account = ?",
-                            new String[] { account.name }, null, null, null);
-            if (!c.moveToNext()) {
-                c.close();
-                db.close();
-                return null;
-            }
-            final String token = c.getString(1);
-            c.close();
-            db.close();
-            return token;
-        }
+    private static String TAG = Config.makeLogTag(Transceiver.class);
 
-        public void invalidateToken(final Account account) {
-            final SQLiteDatabase db = getWritableDatabase();
-            db.delete(TABLE_NAME, "account = ?", new String[] { account.name });
-            db.close();
-        }
-
-        @Override
-        public void onCreate(final SQLiteDatabase db) {
-            db.execSQL("CREATE TABLE " + TABLE_NAME
-                + " (account TEXT UNIQUE, token TEXT);");
-        }
-
-        @Override
-        public void onUpgrade(final SQLiteDatabase db, final int oldVersion,
-                final int newVersion) {
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
-            onCreate(db);
-        }
-
-        public void putToken(final Account account, final String token) {
-            final SQLiteDatabase db = getWritableDatabase();
-            final ContentValues values = new ContentValues();
-            values.put("account", account.name);
-            values.put("token", token);
-            db.insertWithOnConflict(TABLE_NAME, null, values,
-                    SQLiteDatabase.CONFLICT_REPLACE);
-            db.close();
-        }
-    }
-
-    public static final String APPENGINE_SERVICE_NAME = "ah";
-
-    public static final int NEED_AUTH_INTENT = 2;
-
-    public static final int NEED_AUTH_NOTIFICATION = 1;
-
-    public static void ensureHasTokenWithUI(final Activity activity,
-            final Account account, final EnsureHasTokenWithUICallback callback) {
+    /**
+     * Gets an auth token for a particular account, prompting the user for
+     * credentials if necessary. This method is intended for applications
+     * running in the foreground where it makes sense to ask the user directly
+     * for a password.
+     * 
+     * @param account
+     *            The account to fetch an auth token for
+     * @param activity
+     *            The Activity context to use for launching a new
+     *            authenticator-defined sub-Activity to prompt the user for a
+     *            password if necessary; used only to call startActivity(); must
+     *            not be null.
+     * @param callback
+     *            Callback to invoke when the request completes
+     */
+    private static void authentifyWithUiIfNeeded(final Account account,
+            final Activity activity, final AuthentifyWithUICallback callback) {
         final AccountManager am = AccountManager.get(activity);
-        am.getAuthToken(account, APPENGINE_SERVICE_NAME, null, activity,
+        final AccountManagerCallback<Bundle> amCallback =
                 new AccountManagerCallback<Bundle>() {
                     @Override
-                    public
-                            void
-                            run(final AccountManagerFuture<Bundle> authBundleFuture) {
-                        Bundle authBundle = null;
+                    public void run(
+                            final AccountManagerFuture<Bundle> bundleFuture) {
+                        final Bundle authBundle;
                         try {
-                            authBundle = authBundleFuture.getResult();
+                            authBundle = bundleFuture.getResult();
                         }
                         catch (final OperationCanceledException e) {
                             callback.onAuthDenied();
@@ -186,162 +250,197 @@ public final class Transceiver {
 
                         if (authBundle
                                 .containsKey(AccountManager.KEY_AUTHTOKEN))
-                            callback.onHasToken((String) authBundle
-                                    .get(AccountManager.KEY_AUTHTOKEN));
+                            callback.onHasToken(new GoogleAuthToken(
+                                    (String) authBundle
+                                            .get(AccountManager.KEY_AUTHTOKEN)));
                         else
-                            callback.onError(new IllegalStateException(
+                            callback.onError(new InternalError(
                                     "No auth token available, but operation not canceled."));
                     }
-                }, null);
+                };
+        am.getAuthToken(account, APPENGINE_TOKEN_TYPE, null, activity,
+                amCallback, null);
     }
 
-    private final String mAuthUrlTemplate;
+    private final Account account;
 
-    private final Context mContext;
+    private final Context context;
 
-    private final DefaultHttpClient mHttpClient;
+    private final DefaultHttpClient httpclient;
 
-    private final TokenStoreHelper mTokenStoreHelper;
-
-    public Transceiver(final Context context, final String authUrlTemplate,
-            final String rpcUrl) {
-        this.mContext = context;
-        this.mAuthUrlTemplate = authUrlTemplate;
-        this.mTokenStoreHelper = new TokenStoreHelper(context);
-        this.mHttpClient = new DefaultHttpClient();
+    public Transceiver(final Account account, final Context context) {
+        this.account = account;
+        this.context = context;
+        this.httpclient = new DefaultHttpClient();
     }
 
-    public void blockingAuthenticateAccount(final Account account,
-            final int needAuthAction, final boolean forceReauthenticate)
-            throws AuthenticationException, OperationCanceledException,
-            RequestedUserAuthenticationException, InvalidAuthTokenException {
+    /**
+     * This method may block while a network request completes, and must never
+     * be made from the main thread.
+     * 
+     * @param account
+     *            The account to fetch an auth token for
+     * @param uiChoice
+     *            If {@link AuthUiChoice#USE_NOTIFICATION}, display a
+     *            notification and return null if authentication fails; if
+     *            {@link AuthUiChoice#USE_INTENT}, prompt and wait for the user
+     *            to re-enter correct credentials before returning
+     * @return A token associated with this account
+     * @throws OperationCanceledException
+     *             if the request was canceled for any reason, including the
+     *             user canceling a credential request
+     * @throws AuthenticatorException
+     *             if the authenticator failed to respond
+     * @throws IOException
+     *             if the authenticator experienced an I/O problem creating a
+     *             new auth token, usually because of network trouble
+     */
+    private GoogleAuthToken
+            blockingGetNewAuthToken(final AuthUiChoice uiChoice)
+                    throws OperationCanceledException, AuthenticatorException,
+                    IOException {
+        final AccountManager am = AccountManager.get(this.context);
+        final String authTokenStr =
+                am.blockingGetAuthToken(this.account, APPENGINE_TOKEN_TYPE,
+                        uiChoice == AuthUiChoice.USE_NOTIFICATION);
+        return new GoogleAuthToken(authTokenStr);
+    }
 
-        final String existingToken = this.mTokenStoreHelper.getToken(account);
-        if (!forceReauthenticate && existingToken != null) {
-            final BasicClientCookie c =
-                    new BasicClientCookie("ACSID", existingToken);
-            try {
-                c.setDomain(new URI(Config.SERVER_BASE_URL).getHost());
-                this.mHttpClient.getCookieStore().addCookie(c);
-                return;
-            }
-            catch (final URISyntaxException e) {
-            }
-        }
+    /**
+     * Clears the Acsid token we might have had
+     */
+    public void clearAcsidToken() {
+        this.httpclient.getCookieStore().clear();
+    }
 
-        // Get an auth token for this account.
-        final AccountManager am = AccountManager.get(this.mContext);
-        Bundle authBundle = null;
-        String authToken = null;
+    /**
+     * Releases allocated resources. The instance cannot be used afterward.
+     */
+    public void dispose() {
+        this.httpclient.getConnectionManager().shutdown();
+    }
 
-        // Block on getting the auth token result.
+    public GatewayResponseData exchangeWithServer(final AuthUiChoice uiChoice,
+            final GatewayRequestData request) throws IOException,
+            OperationCanceledException, AuthenticatorException {
+
+        /* Get Google Auth Token */
+        final GoogleAuthToken googleAuthToken =
+                blockingGetNewAuthToken(uiChoice);
+
+        /* Promote to ACSID Token */
         try {
-            authBundle =
-                    am.getAuthToken(account, APPENGINE_SERVICE_NAME,
-                            needAuthAction == NEED_AUTH_NOTIFICATION, null,
-                            null).getResult();
+            promoteTokenIfNoCookie(googleAuthToken);
         }
-        catch (final IOException e) {
-            throw new AuthenticationException(
-                    "IOException while getting auth token.", e);
-        }
-        catch (final AuthenticatorException e) {
-            throw new AuthenticationException(
-                    "AuthenticatorException while getting auth token.", e);
+        catch (final InvalidGoogleAuthTokenException e) {
+            final String message =
+                    "blockingGetNewAuthToken returned an invalid token: "
+                        + e.toString();
+            Log.e(TAG, message);
+            throw new InternalError(message);
         }
 
-        if (authBundle.containsKey(AccountManager.KEY_INTENT)
-            && needAuthAction == NEED_AUTH_INTENT) {
-            final Intent authRequestIntent =
-                    (Intent) authBundle.get(AccountManager.KEY_INTENT);
-            this.mContext.startActivity(authRequestIntent);
-            throw new RequestedUserAuthenticationException();
-        }
-        else if (authBundle.containsKey(AccountManager.KEY_AUTHTOKEN))
-            authToken = authBundle.getString(AccountManager.KEY_AUTHTOKEN);
-
-        if (authToken == null)
-            throw new AuthenticationException("Retrieved auth token was null.");
-
-        try {
-            blockingAuthenticateWithToken(account, authToken);
-        }
-        catch (final InvalidAuthTokenException e) {
-            am.invalidateAuthToken(account.type, authToken);
-            throw e;
-        }
+        return postData(request);
     }
 
-    private void blockingAuthenticateWithToken(final Account account,
-            final String authToken) throws AuthenticationException,
-            InvalidAuthTokenException {
-        // Promote the given auth token into an App Engine ACSID token.
-        final HttpGet httpGet =
-                new HttpGet(String.format(this.mAuthUrlTemplate, authToken));
-        String acsidToken = null;
-
-        try {
-            final HttpResponse response = this.mHttpClient.execute(httpGet);
-            if (response.getStatusLine().getStatusCode() == 403)
-                throw new InvalidAuthTokenException();
-
-            final List<Cookie> cookies =
-                    this.mHttpClient.getCookieStore().getCookies();
-            for (final Cookie cookie : cookies)
-                if (cookie.getName().equals("ACSID")) {
-                    acsidToken = cookie.getValue();
-                    break;
-                }
-
-            if (acsidToken == null
-                && response.getStatusLine().getStatusCode() == 500)
-                // If no ACSID cookie was passed, it usually means the auth
-                // token was invalid;
-                throw new InvalidAuthTokenException(
-                        "ACSID cookie not found in HTTP response: "
-                            + response.getStatusLine().toString()
-                            + "; assuming invalid auth token.");
-
-            this.mTokenStoreHelper.putToken(account, acsidToken);
-        }
-        catch (final ClientProtocolException e) {
-            throw new AuthenticationException(
-                    "HTTP Protocol error authenticating to App Engine", e);
-        }
-        catch (final IOException e) {
-            throw new AuthenticationException(
-                    "IOException authenticating to App Engine", e);
-        }
+    /**
+     * Goes through {@link #httpclient}'s cookies to find an {@link AcsidToken}.
+     * 
+     * @return The token if it finds one, else null
+     */
+    public AcsidToken getAcsidToken() {
+        final List<Cookie> cookies =
+                this.httpclient.getCookieStore().getCookies();
+        for (final Cookie cookie : cookies)
+            if (cookie.getName().equals("ACSID"))
+                return new AcsidToken(cookie.getValue());
+        return null;
     }
 
-    public void invalidateAccountAcsidToken(final Account account) {
-        this.mTokenStoreHelper.invalidateToken(account);
+    /**
+     * Goes through {@link #httpclient}'s cookies to find an {@link AcsidToken}.
+     * 
+     * @return true if it finds one, else false
+     */
+    public boolean hasAcsidToken() {
+        final List<Cookie> cookies =
+                this.httpclient.getCookieStore().getCookies();
+        for (final Cookie cookie : cookies)
+            if (cookie.getName().equals("ACSID"))
+                return true;
+        return false;
     }
 
-    public void postData(final GatewayRequestData request) {
-        // Create a new HttpClient and Post Header
-        final HttpClient httpclient = new DefaultHttpClient();
-        final HttpPost httppost =
-                new HttpPost("http://www.yoursite.com/script.php");
-
+    private GatewayResponseData postData(final GatewayRequestData request)
+            throws IOException {
+        HttpPost httpRequest = null;
+        InputStream responseStream = null;
+        final ByteArrayEntity requestEntity =
+                new ByteArrayEntity(request.toByteArray());
         try {
-            // Add your data
-            final ArrayList<BasicNameValuePair> nameValuePairs =
-                    new ArrayList<BasicNameValuePair>(2);
-            nameValuePairs.add(new BasicNameValuePair("id", "12345"));
-            nameValuePairs.add(new BasicNameValuePair("stringdata",
-                    "AndDev is Cool!"));
-            httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+            // Setup the client
+            httpRequest = new HttpPost(Config.SERVER_RPC_URL);
+            httpRequest.setEntity(requestEntity);
 
             // Execute HTTP Post Request
-            final HttpResponse response = httpclient.execute(httppost);
+            final HttpResponse response = this.httpclient.execute(httpRequest);
+            if (response.getEntity() == null)
+                return null;
+            else {
+                responseStream = response.getEntity().getContent();
+                return GatewayResponseData.parseFrom(responseStream);
+            }
+        }
+        finally {
+            if (httpRequest != null)
+                httpRequest.abort();
+            if (responseStream != null)
+                responseStream.close();
+        }
+    }
 
+    /**
+     * If {{@link #hasAcsidToken()} returns true does nothing. Else, promotes a
+     * {@link GoogleAuthToken} into an {@link AcsidToken} by talking with the
+     * AppEngine server and adds this token to {@link #httpclient}'s cookie jar.
+     * 
+     * @param account
+     *            The account to which the {@link GoogleAuthToken} is associated
+     * @param googleAuthToken
+     *            Associated to the {@link Account}
+     * @throws AuthenticationException
+     * @throws InvalidGoogleAuthTokenException
+     *             The token was rejected by the server
+     * @throws IOException
+     */
+    private void promoteTokenIfNoCookie(final GoogleAuthToken googleAuthToken)
+            throws IOException, InvalidGoogleAuthTokenException {
+
+        if (hasAcsidToken())
+            return;
+
+        final HttpGet httpGet =
+                new HttpGet(SERVER_AUTH_URL_PREFIX + googleAuthToken.value);
+        /* The auth page will redirect to an url we don't care about */
+        httpGet.setParams(HTTP_PARAMS_NO_REDIRECTIONS);
+
+        final HttpResponse response = this.httpclient.execute(httpGet);
+
+        if (response.getStatusLine().getStatusCode() == 403) {
+            clearAcsidToken();
+            throw new InvalidGoogleAuthTokenException(
+                    "Token rejected by the server");
         }
-        catch (final ClientProtocolException e) {
-            // TODO Auto-generated catch block
-        }
-        catch (final IOException e) {
-            // TODO Auto-generated catch block
+
+        if (!hasAcsidToken()) {
+            clearAcsidToken();
+            // If no ACSID cookie was passed, it usually means the auth
+            // token was invalid;
+            throw new InvalidGoogleAuthTokenException(
+                    "ACSID cookie not found in HTTP response: "
+                        + response.getStatusLine().toString()
+                        + "; assuming invalid auth token.");
+
         }
     }
 

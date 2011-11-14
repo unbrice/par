@@ -30,11 +30,6 @@ import android.util.Log;
  * Bunch of static methods that acts as placeholder for the real code
  */
 public final class PlaceHolder {
-    public static interface ExchangeWithServerCallback {
-        public void onServerError(GatewayRequestData request, PlaceHolderException e);
-
-        public void onServerResponse(GatewayRequestData request, GatewayResponseData response);
-    }
 
     @SuppressWarnings("serial")
     public static class PlaceHolderException extends RuntimeException {
@@ -66,11 +61,6 @@ public final class PlaceHolder {
     public static Uri buildNoteUri(final String accountName, final long noteId) {
         return Uri.withAppendedPath(buildNoteListUri(accountName),
                 Long.toString(noteId));
-    }
-
-    public static void exchangeWithServer(final GatewayRequestData request,
-            final ExchangeWithServerCallback exchangeWithServerCallback) {
-        Log.w(TAG, "fetchDirectives");
     }
 
     /**
