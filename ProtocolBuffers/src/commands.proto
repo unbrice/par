@@ -27,7 +27,7 @@ option optimize_for = LITE_RUNTIME;
 import "devices.proto";
 
 message HapticNotificationData {
-	/* If there is not, we will use the default sequence */
+	/* If absent, we will use the default sequence */
 	repeated uint32 vibration_sequence = 1 [packed=true];
 }
 

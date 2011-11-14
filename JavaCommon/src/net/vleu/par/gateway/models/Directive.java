@@ -16,14 +16,18 @@
  */
 package net.vleu.par.gateway.models;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import net.vleu.par.protocolbuffer.Commands.DirectiveData;
+import net.vleu.par.protocolbuffer.Commands.HapticNotificationData;
+import net.vleu.par.protocolbuffer.Commands.StatusBarNotificationData;
 import net.vleu.par.protocolbuffer.Devices.DeviceIdData;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
 public final class Directive {
+
     @SuppressWarnings("serial")
     public static class InvalidDirectiveSerialisation extends Exception {
         private final DeviceIdData invalidProto;
@@ -51,6 +55,72 @@ public final class Directive {
         }
     }
 
+    public static interface ThrowingVisitor {
+        public void visit(HapticNotificationData data) throws Exception;
+
+        public void visit(StatusBarNotificationData data) throws Exception;
+    }
+
+    /**
+     * This visitor validates the directive, keeping tracks of errors.
+     */
+    private static class Validator implements Visitor {
+        /** True if all visited objects so far are valid, false else */
+        private final boolean allValid = true;
+        /** Strings describing the errors will be added to it */
+        private final ArrayList<String> errors;
+
+        /**
+         * @param errors
+         *            Strings describing the errors will be added to this
+         */
+        public Validator(final ArrayList<String> errors) {
+            this.errors = errors;
+        }
+
+        @Override
+        public void visit(final HapticNotificationData data) {
+            /* All well-formed protocol buffers are valid */
+        }
+
+        @Override
+        public void visit(final StatusBarNotificationData data) {
+            /* All well-formed protocol buffers are valid */
+        }
+    }
+
+    public static interface Visitor extends ThrowingVisitor {
+        @Override
+        public void visit(HapticNotificationData data);
+
+        @Override
+        public void visit(StatusBarNotificationData data);
+    }
+
+    public static void accept(final DirectiveData dirData,
+            final ThrowingVisitor visitor) throws Exception {
+        for (final HapticNotificationData proto : dirData
+                .getHapticNotificationList())
+            visitor.visit(proto);
+        for (final StatusBarNotificationData proto : dirData
+                .getStatusbarNotificationList())
+            visitor.visit(proto);
+    }
+
+    public static void
+            accept(final DirectiveData dirData, final Visitor visitor) {
+        try {
+            accept(dirData, (ThrowingVisitor) visitor);
+        }
+        catch (final RuntimeException e) {
+            throw e;
+        }
+        catch (final Exception e) {
+            throw new InternalError(
+                    "A non-throwing visitor throwed an exception !");
+        }
+    }
+
     public static Directive fromProtocolBuffer(final byte[] data)
             throws InvalidDirectiveSerialisation {
         Directive res;
@@ -63,6 +133,30 @@ public final class Directive {
         }
         // TODO: Check it is valid
         return res;
+    }
+
+    /**
+     * Checks that the data stored in the directives are as described in the
+     * .proto file
+     * 
+     * @param dirData
+     *            The directive to check. Can be null (in which case it's
+     *            invalid).
+     * @param errors
+     *            Strings describing the errors will be added to it
+     * @return False if reqData is null or if the data are valid, else true
+     */
+    public static boolean isValid(final DirectiveData dirData,
+            final ArrayList<String> errors) {
+        if (dirData != null) {
+            final Validator validator = new Validator(errors);
+            accept(dirData, validator);
+            return validator.allValid;
+        }
+        else {
+            errors.add("Not a ProtocolBuffer !");
+            return false;
+        }
     }
 
     private final DirectiveData proto;

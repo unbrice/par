@@ -74,6 +74,8 @@ public final class GatewayRequest {
         @Override
         public void visit(final QueueDirectiveData data) {
             checkDeviceId(data.getDeviceId());
+            if (!Directive.isValid(data.getDirective(), this.errors))
+                this.allValid = false;
         }
 
         @Override
@@ -123,7 +125,8 @@ public final class GatewayRequest {
      * file
      * 
      * @param reqData
-     *            The request to check. Can be null.
+     *            The request to check. Can be null (in which case it's
+     *            invalid).
      * @param errors
      *            Strings describing the errors will be added to it
      * @return False if reqData is null or if the data are valid, else true
