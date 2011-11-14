@@ -30,7 +30,7 @@ import android.util.Log;
  * Bunch of static methods that acts as placeholder for the real code
  */
 public final class PlaceHolder {
-    public static interface ExchangeWithServerCallack {
+    public static interface ExchangeWithServerCallback {
         public void onServerError(GatewayRequestData request, PlaceHolderException e);
 
         public void onServerResponse(GatewayRequestData request, GatewayResponseData response);
@@ -69,7 +69,7 @@ public final class PlaceHolder {
     }
 
     public static void exchangeWithServer(final GatewayRequestData request,
-            final ExchangeWithServerCallack exchangeWithServerCallack) {
+            final ExchangeWithServerCallback exchangeWithServerCallback) {
         Log.w(TAG, "fetchDirectives");
     }
 

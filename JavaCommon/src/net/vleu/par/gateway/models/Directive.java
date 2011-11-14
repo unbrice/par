@@ -27,7 +27,6 @@ import net.vleu.par.protocolbuffer.Devices.DeviceIdData;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 public final class Directive {
-
     @SuppressWarnings("serial")
     public static class InvalidDirectiveSerialisation extends Exception {
         private final DeviceIdData invalidProto;
@@ -96,6 +95,9 @@ public final class Directive {
         @Override
         public void visit(StatusBarNotificationData data);
     }
+
+    public static final long[] DEFAULT_VIBRATION_SEQUENCE = { 0L, 100L, 250L,
+            1000L, 250L, 500L };
 
     public static void accept(final DirectiveData dirData,
             final ThrowingVisitor visitor) throws Exception {

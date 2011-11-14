@@ -19,9 +19,10 @@ package net.vleu.par.android.sync;
 import java.util.List;
 
 import net.vleu.par.PlaceHolder;
-import net.vleu.par.PlaceHolder.ExchangeWithServerCallack;
+import net.vleu.par.PlaceHolder.ExchangeWithServerCallback;
 import net.vleu.par.PlaceHolder.PlaceHolderException;
 import net.vleu.par.android.Config;
+import net.vleu.par.android.DirectivesExecutor;
 import net.vleu.par.android.preferences.Preferences;
 import net.vleu.par.android.rpc.Transceiver;
 import net.vleu.par.android.rpc.Transceiver.InvalidAuthTokenException;
@@ -50,11 +51,11 @@ import com.google.android.c2dm.C2DMessaging;
  * Instantiated by the {@link SyncAdapter}, performs the synchronization
  */
 final class Syncer {
-    private final class MyExchangeWithServerCallack implements
-            ExchangeWithServerCallack {
+    private final class MyExchangeWithServerCallback implements
+            ExchangeWithServerCallback {
         private final String c2dmToken;
 
-        public MyExchangeWithServerCallack(final String c2dmToken) {
+        public MyExchangeWithServerCallback(final String c2dmToken) {
             this.c2dmToken = c2dmToken;
         }
 
@@ -219,8 +220,10 @@ final class Syncer {
     }
 
     private void applyDirectives(final List<DirectiveData> directives) {
+        final DirectivesExecutor executor =
+                new DirectivesExecutor(this.context);
         for (final DirectiveData directive : directives)
-            Log.w(TAG, "Stub for applyDirectives");
+            executor.execute(directive);
     }
 
     /**
@@ -296,8 +299,8 @@ final class Syncer {
                 C2DMessaging.getRegistrationId(Syncer.this.context);
         final GatewayRequestData.Builder requestBuilder =
                 GatewayRequestData.newBuilder();
-        final MyExchangeWithServerCallack calledAfterExchange =
-                new MyExchangeWithServerCallack(c2dmToken);
+        final MyExchangeWithServerCallback calledAfterExchange =
+                new MyExchangeWithServerCallback(c2dmToken);
 
         refreshAppC2DMRegistrationState(this.context);
 
