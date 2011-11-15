@@ -24,6 +24,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 import net.jcip.annotations.ThreadSafe;
+import net.vleu.par.C2dmToken;
 
 import com.google.appengine.api.urlfetch.HTTPHeader;
 import com.google.appengine.api.urlfetch.HTTPMethod;
@@ -59,11 +60,11 @@ public class C2dmRequestFactory {
         }
     }
 
-    private static byte[] buildPostData(final String registrationId)
+    private static byte[] buildPostData(final C2dmToken registrationId)
             throws UnsupportedEncodingException {
         final StringBuilder postDataBuilder = new StringBuilder();
         postDataBuilder.append(POST_REGISTRATION_ID_NAME).append('=')
-                .append(registrationId);
+                .append(registrationId.value);
         postDataBuilder.append('&').append(POST_COLLAPSE_KEY);
         postDataBuilder.append('&').append(POST_PAYLOAD);
         return postDataBuilder.toString().getBytes(UTF8);
@@ -77,7 +78,7 @@ public class C2dmRequestFactory {
                 new HTTPHeader("Authorization", "GoogleLogin auth=" + authToken);
     }
 
-    public HTTPRequest buildRequest(final String registrationId)
+    public HTTPRequest buildRequest(final C2dmToken registrationId)
             throws IOException {
         final HTTPRequest request =
                 new HTTPRequest(URL, HTTPMethod.POST, validateCertificate());

@@ -16,6 +16,7 @@
  */
 package net.vleu.par;
 
+
 /**
  * Typesafe wrapper for the strings that Android's C2DM uses to identify
  * devices.
@@ -23,5 +24,12 @@ package net.vleu.par;
 public final class C2dmToken extends WrappedString {
     public C2dmToken(final String value) {
         super(value);
+    }
+
+    /**
+     * @return true if value.length() is greater than 0
+     */
+    public boolean isValid() {
+        return this.value.length() > 0;
     }
 }

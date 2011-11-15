@@ -279,17 +279,16 @@ final class Syncer {
 
         if (newLocalData) {
             /* Tries adding the registration to the request */
-            final String c2dmTokenStr =
-                    C2DMessaging.getRegistrationId(Syncer.this.context);
-            if (c2dmTokenStr.length() == 0) {
+            c2dmToken =
+                    new C2dmToken(
+                            C2DMessaging.getRegistrationId(Syncer.this.context));
+            if (c2dmToken.isValid())
+                requestBuilder.addRegisterDevice(this.requestMaker
+                        .makeRegisterDeviceData(c2dmToken));
+            else {
                 Log.i(TAG, "Failed registring with C2DM");
                 syncResult.stats.numIoExceptions++;
                 return;
-            }
-            else {
-                c2dmToken = new C2dmToken(c2dmTokenStr);
-                requestBuilder.addRegisterDevice(this.requestMaker
-                        .makeRegisterDeviceData(c2dmToken));
             }
         }
 

@@ -16,9 +16,11 @@
  */
 package net.vleu.par.gateway.models;
 
+import net.vleu.par.C2dmToken;
+
 public final class Device {
     /** Access token for using C2DM with this device */
-    private String c2dmRegistrationId;
+    private C2dmToken c2dmRegistrationId;
     private final DeviceId id;
 
     /**
@@ -35,7 +37,7 @@ public final class Device {
      * @param c2dmRegistrationId
      *            Null if the device is not registered
      */
-    public Device(final DeviceId id, final String c2dmRegistrationId) {
+    public Device(final DeviceId id, final C2dmToken c2dmRegistrationId) {
         this.id = id;
         this.c2dmRegistrationId = c2dmRegistrationId;
     }
@@ -53,7 +55,7 @@ public final class Device {
     }
 
     /** @return access token for using C2DM with this device */
-    public String getC2dmRegistrationId() {
+    public C2dmToken getC2dmRegistrationId() {
         if (!hasC2dmRegistrationId())
             throw new IllegalStateException("No C2DM Registration ID");
         else
@@ -66,7 +68,7 @@ public final class Device {
 
     public boolean hasC2dmRegistrationId() {
         return (this.c2dmRegistrationId != null)
-            && (this.c2dmRegistrationId.length() > 0);
+            && (this.c2dmRegistrationId.isValid());
     }
 
     @Override
@@ -80,7 +82,7 @@ public final class Device {
      * @param c2dmRegistrationId
      *            Access token for using C2DM with this device, or null
      */
-    protected void setC2dmRegistrationId(final String c2dmRegistrationId) {
+    protected void setC2dmRegistrationId(final C2dmToken c2dmRegistrationId) {
         this.c2dmRegistrationId = c2dmRegistrationId;
     }
 }

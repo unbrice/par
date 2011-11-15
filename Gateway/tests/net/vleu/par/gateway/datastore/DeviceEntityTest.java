@@ -17,6 +17,7 @@
 package net.vleu.par.gateway.datastore;
 
 import static org.junit.Assert.assertEquals;
+import net.vleu.par.C2dmToken;
 import net.vleu.par.gateway.models.Device;
 import net.vleu.par.gateway.models.DeviceId;
 import net.vleu.par.gateway.models.UserIdTest;
@@ -38,13 +39,13 @@ import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
  */
 public class DeviceEntityTest {
 
-    private static final String C2DM_ID = "dummyC2DM";
+    private static final C2dmToken C2DM_TOKEN = new C2dmToken("dummyC2DM");
 
     public static final DeviceId DUMMY_DEVICE_ID = DeviceId
             .fromBase64urlWithNoVerifications("CTJ5BgAAAAAA");
 
     private static Device buildDummyDevice() {
-        return new Device(DUMMY_DEVICE_ID, C2DM_ID);
+        return new Device(DUMMY_DEVICE_ID, C2DM_TOKEN);
     }
 
     public static Entity buildDummyDeviceEntity() {
@@ -90,7 +91,7 @@ public class DeviceEntityTest {
         final Device device = buildDummyDevice();
         final Entity entity =
                 DeviceEntity.entityFromDevice(UserIdTest.DUMMY_USER_ID, device);
-        assertEquals(C2DM_ID,
+        assertEquals(C2DM_TOKEN.value,
                 entity.getProperty(DeviceEntity.C2DM_REGISTRATION_ID_PROPERTY));
         assertEquals(DUMMY_DEVICE_ID.toBase64url(), entity.getKey().getName());
         assertEquals(DeviceEntity.KIND, entity.getKind());

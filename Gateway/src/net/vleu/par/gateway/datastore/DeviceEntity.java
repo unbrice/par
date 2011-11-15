@@ -16,6 +16,7 @@
  */
 package net.vleu.par.gateway.datastore;
 
+import net.vleu.par.C2dmToken;
 import net.vleu.par.gateway.models.Device;
 import net.vleu.par.gateway.models.DeviceId;
 import net.vleu.par.gateway.models.UserId;
@@ -36,8 +37,8 @@ public final class DeviceEntity {
 
     public static Device deviceFromEntity(final Entity entity) {
         assert (entity.getKind() == KIND);
-        final String c2dmRegistrationId =
-                (String) entity.getProperty(C2DM_REGISTRATION_ID_PROPERTY);
+        final C2dmToken c2dmRegistrationId = new C2dmToken(
+                (String) entity.getProperty(C2DM_REGISTRATION_ID_PROPERTY));
         final DeviceId id =
                 DeviceId.fromBase64urlWithNoVerifications(entity.getKey()
                         .getName());
@@ -51,7 +52,7 @@ public final class DeviceEntity {
                 new Entity(KIND, deviceKey.getName(), deviceKey.getParent());
         if (device.hasC2dmRegistrationId())
             res.setUnindexedProperty(C2DM_REGISTRATION_ID_PROPERTY,
-                    device.getC2dmRegistrationId());
+                    device.getC2dmRegistrationId().value);
         return res;
     }
 

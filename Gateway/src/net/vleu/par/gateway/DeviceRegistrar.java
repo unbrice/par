@@ -17,6 +17,7 @@
 package net.vleu.par.gateway;
 
 import net.jcip.annotations.ThreadSafe;
+import net.vleu.par.C2dmToken;
 import net.vleu.par.gateway.datastore.DeviceEntity;
 import net.vleu.par.gateway.datastore.ThreadLocalDatastoreService;
 import net.vleu.par.gateway.models.Device;
@@ -56,7 +57,7 @@ public class DeviceRegistrar {
      * @param c2dmRegistrationId
      */
     public void registerDevice(final UserId ownerId, final DeviceId deviceId,
-            final String c2dmRegistrationId) {
+            final C2dmToken c2dmRegistrationId) {
         final Device device = new Device(deviceId, c2dmRegistrationId);
         final Entity deviceEntity =
                 DeviceEntity.entityFromDevice(ownerId, device);

@@ -35,6 +35,7 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import net.vleu.par.C2dmToken;
 import net.vleu.par.gateway.datastore.DeviceEntityTest;
 import net.vleu.par.gateway.models.UserIdTest;
 import net.vleu.par.protocolbuffer.Devices.DeviceIdData;
@@ -69,8 +70,8 @@ public class ApiServletTest {
 
     }
 
-    private static final String DUMMY_C2DM_REGISTRATION_ID =
-            "Dummy Google Auth Id";
+    private static final C2dmToken DUMMY_C2DM_REGISTRATION_ID = new C2dmToken(
+            "Dummy Google Auth Id");
 
     @Mock
     private DeviceRegistrar deviceRegistrar;
@@ -90,7 +91,7 @@ public class ApiServletTest {
                 DeviceEntityTest.DUMMY_DEVICE_ID.asProtocolBuffer();
         final RegisterDeviceData registerDeviceData =
                 RegisterDeviceData.newBuilder().setDeviceId(deviceIdData)
-                        .setC2DmRegistrationId(DUMMY_C2DM_REGISTRATION_ID)
+                        .setC2DmRegistrationId(DUMMY_C2DM_REGISTRATION_ID.value)
                         .build();
         final GatewayRequestData requestData =
                 GatewayRequestData.newBuilder()

@@ -23,6 +23,7 @@ import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
 import net.jcip.annotations.ThreadSafe;
+import net.vleu.par.C2dmToken;
 import net.vleu.par.gateway.datastore.DeviceEntity;
 import net.vleu.par.gateway.datastore.ThreadLocalDatastoreService;
 import net.vleu.par.gateway.models.Device;
@@ -148,7 +149,7 @@ public class DeviceWaker {
         final Entity deviceEntity = this.datastores.get().get(null, deviceKey);
         final Device device = DeviceEntity.deviceFromEntity(deviceEntity);
         if (device.hasC2dmRegistrationId()) {
-            final String c2dmRegistrationId = device.getC2dmRegistrationId();
+            final C2dmToken c2dmRegistrationId = device.getC2dmRegistrationId();
             final HTTPRequest request =
                     this.requestFactory.buildRequest(c2dmRegistrationId);
             final HTTPResponse response = this.urlFetchService.get().fetch(request);
