@@ -36,15 +36,12 @@ import java.io.InputStream;
 import java.util.List;
 
 import net.jcip.annotations.ThreadSafe;
-import net.vleu.par.PlaceHolder.PlaceHolderException;
 import net.vleu.par.WrappedString;
 import net.vleu.par.android.Config;
-import net.vleu.par.android.rpc.Transceiver.AuthUiChoice;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayResponseData;
 
 import org.apache.http.HttpResponse;
-import org.apache.http.auth.AuthenticationException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.params.ClientPNames;
@@ -57,13 +54,10 @@ import org.apache.http.params.HttpParams;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
-import android.accounts.AccountManagerCallback;
-import android.accounts.AccountManagerFuture;
 import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
-import android.app.Activity;
 import android.content.Context;
-import android.os.Bundle;
+import android.content.SharedPreferences;
 import android.util.Log;
 
 @ThreadSafe
@@ -84,35 +78,12 @@ public final class Transceiver {
         }
     }
 
-    public static interface AuthentifyWithUICallback {
-        public void onAuthDenied();
-
-        /**
-         * Called with the Google auth token when the authentication succeeds
-         * 
-         * @param authToken
-         *            The Google auth token
-         */
-        public void onHasToken(GoogleAuthToken authToken);
-
-        /**
-         * Called when the authenticator failed to respond
-         */
-        public void onLocalError(AuthenticatorException e);
-
-        /**
-         * Called if there is a bug in the {@link Transceiver}'s code
-         * 
-         * @param e
-         *            Its message should give indication about the bug
-         */
-        public void onLocalError(InternalError e);
-
-        /**
-         * Called if the authenticator experienced an I/O problem creating a new
-         * auth token, usually because of network trouble
-         */
-        public void onLocalError(IOException e);
+    /**
+     * Thrown when a {@link GoogleAuthToken} or an {@link AcsidToken} we have
+     * been using has expired and needs to be renewed.
+     */
+    @SuppressWarnings("serial")
+    public static class AuthenticationTokenExpired extends Exception {
     }
 
     /**
@@ -120,40 +91,6 @@ public final class Transceiver {
      */
     public enum AuthUiChoice {
         USE_INTENT, USE_NOTIFICATION
-    }
-
-    public static interface ExchangeWithServerCallback {
-
-        /**
-         * Called when the authenticator failed to respond
-         */
-        public void onLocalError(AuthenticatorException e);
-
-        /**
-         * Called if there is a bug in the {@link Transceiver}'s code
-         * 
-         * @param e
-         *            Its message should give indication about the bug
-         */
-        public void onLocalError(InternalError e);
-
-        /**
-         * Called if the request was canceled by the user
-         */
-        public void onLocalError(OperationCanceledException e);
-
-        /**
-         * Called if the authenticator experienced an I/O problem creating a new
-         * auth token, usually because of network trouble
-         */
-        public void onNetworkError(IOException e);
-
-        public void onServerError(GatewayRequestData request,
-                PlaceHolderException e);
-
-        public void onServerResponse(GatewayRequestData request,
-                GatewayResponseData response);
-
     }
 
     /**
@@ -180,18 +117,6 @@ public final class Transceiver {
         }
     }
 
-    /**
-     * Thrown by
-     * {@link Transceiver#blockingAuthenticateAccount(Account, AuthUiChoice, boolean)}
-     * when the authenticating the token requires an user interaction.
-     * 
-     * It means that the authentication should be retried later, possibly after
-     * the user answered.
-     */
-    @SuppressWarnings("serial")
-    public static class RequestedUserAuthenticationException extends Exception {
-    }
-
     private static final String APPENGINE_TOKEN_TYPE = "ah";
 
     /**
@@ -202,76 +127,41 @@ public final class Transceiver {
             (new BasicHttpParams()).setBooleanParameter(
                     ClientPNames.HANDLE_REDIRECTS, false);
 
+    /**
+     * Used by {@link #setCachedGoogleAuthToken(GoogleAuthToken)},
+     * {@link #clearCachedGoogleAuthToken()} and
+     * {@link #getCachedGoogleAuthToken()} to store the latest
+     * {@link GoogleAuthToken} in the {@link #sharedPreferences}
+     */
+    private static final String KEY_NAME_CACHED_GOOGLE_AUTH =
+            "cached_google_auth";
+
     private static final String SERVER_AUTH_URL_PREFIX = Config.SERVER_BASE_URL
         + "/_ah/login?continue=http://localhost/&auth=";
 
+    private static final String SHARED_PREFERENCES_PREFIX = "transceiver-";
+
     private static String TAG = Config.makeLogTag(Transceiver.class);
-
-    /**
-     * Gets an auth token for a particular account, prompting the user for
-     * credentials if necessary. This method is intended for applications
-     * running in the foreground where it makes sense to ask the user directly
-     * for a password.
-     * 
-     * @param account
-     *            The account to fetch an auth token for
-     * @param activity
-     *            The Activity context to use for launching a new
-     *            authenticator-defined sub-Activity to prompt the user for a
-     *            password if necessary; used only to call startActivity(); must
-     *            not be null.
-     * @param callback
-     *            Callback to invoke when the request completes
-     */
-    private static void authentifyWithUiIfNeeded(final Account account,
-            final Activity activity, final AuthentifyWithUICallback callback) {
-        final AccountManager am = AccountManager.get(activity);
-        final AccountManagerCallback<Bundle> amCallback =
-                new AccountManagerCallback<Bundle>() {
-                    @Override
-                    public void run(
-                            final AccountManagerFuture<Bundle> bundleFuture) {
-                        final Bundle authBundle;
-                        try {
-                            authBundle = bundleFuture.getResult();
-                        }
-                        catch (final OperationCanceledException e) {
-                            callback.onAuthDenied();
-                            return;
-                        }
-                        catch (final AuthenticatorException e) {
-                            callback.onError(e);
-                            return;
-                        }
-                        catch (final IOException e) {
-                            callback.onError(e);
-                            return;
-                        }
-
-                        if (authBundle
-                                .containsKey(AccountManager.KEY_AUTHTOKEN))
-                            callback.onHasToken(new GoogleAuthToken(
-                                    (String) authBundle
-                                            .get(AccountManager.KEY_AUTHTOKEN)));
-                        else
-                            callback.onError(new InternalError(
-                                    "No auth token available, but operation not canceled."));
-                    }
-                };
-        am.getAuthToken(account, APPENGINE_TOKEN_TYPE, null, activity,
-                amCallback, null);
-    }
 
     private final Account account;
 
     private final Context context;
 
-    private final DefaultHttpClient httpclient;
+    private final DefaultHttpClient httpClient;
+
+    private final SharedPreferences sharedPreferences;
 
     public Transceiver(final Account account, final Context context) {
         this.account = account;
         this.context = context;
-        this.httpclient = new DefaultHttpClient();
+        this.httpClient = new DefaultHttpClient();
+        final String sharedPrefsName = SHARED_PREFERENCES_PREFIX + account.name;
+        this.sharedPreferences =
+                context.getSharedPreferences(sharedPrefsName,
+                        Context.MODE_PRIVATE);
+        final PersistentCookieStore cookieStore =
+                new PersistentCookieStore(this.sharedPreferences);
+        this.httpClient.setCookieStore(cookieStore);
     }
 
     /**
@@ -310,47 +200,88 @@ public final class Transceiver {
      * Clears the Acsid token we might have had
      */
     public void clearAcsidToken() {
-        this.httpclient.getCookieStore().clear();
+        this.httpClient.getCookieStore().clear();
+    }
+
+    /**
+     * Clears the cached {@link GoogleAuthToken} stored in the
+     * {@link #sharedPreferences}
+     */
+    private void clearCachedGoogleAuthToken() {
+        this.sharedPreferences.edit().remove(KEY_NAME_CACHED_GOOGLE_AUTH)
+                .commit();
     }
 
     /**
      * Releases allocated resources. The instance cannot be used afterward.
      */
     public void dispose() {
-        this.httpclient.getConnectionManager().shutdown();
+        this.httpClient.getConnectionManager().shutdown();
     }
 
+
+    /**
+     * Performs authentication if necessary, then exchange the data with the server and
+     * returns the response
+     * @param uiChoice
+     * @param request
+     * @return The response to the request, null if none
+     * @throws IOException
+     * @throws OperationCanceledException
+     * @throws AuthenticatorException
+     */
     public GatewayResponseData exchangeWithServer(final AuthUiChoice uiChoice,
+     
             final GatewayRequestData request) throws IOException,
             OperationCanceledException, AuthenticatorException {
+        final int maxRetries = 10;
+        for (int retry = 0; retry < maxRetries; retry++) {
+            /* Gets Google Auth Token */
+            GoogleAuthToken googleAuthToken = getCachedGoogleAuthToken();
+            if (googleAuthToken == null) {
+                googleAuthToken = blockingGetNewAuthToken(uiChoice);
+                setCachedGoogleAuthToken(googleAuthToken);
+                clearAcsidToken();
+            }
 
-        /* Get Google Auth Token */
-        final GoogleAuthToken googleAuthToken =
-                blockingGetNewAuthToken(uiChoice);
+            /* Promotes to ACSID Token */
+            if (!hasAcsidToken())
+                try {
+                    promoteToken(googleAuthToken);
+                }
+                catch (final InvalidGoogleAuthTokenException e) {
+                    Log.e(TAG,
+                            "The google auth token is invalid. Refreshing all cookies. "
+                                + e.toString());
+                    clearAcsidToken();
+                    clearCachedGoogleAuthToken();
+                    continue;
+                }
 
-        /* Promote to ACSID Token */
-        try {
-            promoteTokenIfNoCookie(googleAuthToken);
+            /* Executes the query */
+            try {
+                return postData(request);
+            }
+            catch (final AuthenticationTokenExpired e) {
+                Log.w(TAG, "Google and/or ACSID tokens expired. Retried "
+                    + retry + " times.");
+                continue;
+            }
         }
-        catch (final InvalidGoogleAuthTokenException e) {
-            final String message =
-                    "blockingGetNewAuthToken returned an invalid token: "
-                        + e.toString();
-            Log.e(TAG, message);
-            throw new InternalError(message);
-        }
-
-        return postData(request);
+        final String failureMessage =
+                "Failed to get valid Google and ACSID tokens !";
+        Log.e(TAG, failureMessage);
+        throw new AuthenticatorException(failureMessage);
     }
 
     /**
-     * Goes through {@link #httpclient}'s cookies to find an {@link AcsidToken}.
+     * Goes through {@link #httpClient}'s cookies to find an {@link AcsidToken}.
      * 
      * @return The token if it finds one, else null
      */
     public AcsidToken getAcsidToken() {
         final List<Cookie> cookies =
-                this.httpclient.getCookieStore().getCookies();
+                this.httpClient.getCookieStore().getCookies();
         for (final Cookie cookie : cookies)
             if (cookie.getName().equals("ACSID"))
                 return new AcsidToken(cookie.getValue());
@@ -358,33 +289,62 @@ public final class Transceiver {
     }
 
     /**
-     * Goes through {@link #httpclient}'s cookies to find an {@link AcsidToken}.
+     * @return the googleAuthToken associated with
+     *         {@link #KEY_NAME_CACHED_GOOGLE_AUTH} in the
+     *         {@link #sharedPreferences}, null if there is none
+     */
+    private GoogleAuthToken getCachedGoogleAuthToken() {
+        final String resultAsString =
+                this.sharedPreferences.getString(KEY_NAME_CACHED_GOOGLE_AUTH,
+                        null);
+        if (resultAsString == null)
+            return null;
+        else
+            return new GoogleAuthToken(resultAsString);
+    }
+
+    /**
+     * Goes through {@link #httpClient}'s cookies to find an {@link AcsidToken}.
      * 
      * @return true if it finds one, else false
      */
     public boolean hasAcsidToken() {
         final List<Cookie> cookies =
-                this.httpclient.getCookieStore().getCookies();
+                this.httpClient.getCookieStore().getCookies();
         for (final Cookie cookie : cookies)
             if (cookie.getName().equals("ACSID"))
                 return true;
         return false;
     }
 
+    /**
+     * Sends the request to the distant server and parses the response
+     * 
+     * @param request
+     *            Won't be checked
+     * @return The response, or null if there weren't any
+     * @throws IOException
+     *             I/O error, usually because of network trouble
+     * @throws AuthenticationTokenExpired
+     *             The token expired while we were using it, it needs to be
+     *             renewed
+     */
     private GatewayResponseData postData(final GatewayRequestData request)
-            throws IOException {
-        HttpPost httpRequest = null;
-        InputStream responseStream = null;
+            throws IOException, AuthenticationTokenExpired {
+        final HttpPost httpRequest = new HttpPost(Config.SERVER_RPC_URL);
         final ByteArrayEntity requestEntity =
                 new ByteArrayEntity(request.toByteArray());
+        InputStream responseStream = null;
+        httpRequest.setEntity(requestEntity);
         try {
-            // Setup the client
-            httpRequest = new HttpPost(Config.SERVER_RPC_URL);
-            httpRequest.setEntity(requestEntity);
+            final HttpResponse response = this.httpClient.execute(httpRequest);
+            final int statusCode = response.getStatusLine().getStatusCode();
 
-            // Execute HTTP Post Request
-            final HttpResponse response = this.httpclient.execute(httpRequest);
-            if (response.getEntity() == null)
+            if (statusCode == 403)
+                throw new AuthenticationTokenExpired();
+            else if (statusCode != 200)
+                throw new IOException("Status code is: " + statusCode);
+            else if (response.getEntity() == null)
                 return null;
             else {
                 responseStream = response.getEntity().getContent();
@@ -392,39 +352,35 @@ public final class Transceiver {
             }
         }
         finally {
-            if (httpRequest != null)
-                httpRequest.abort();
+            httpRequest.abort();
             if (responseStream != null)
                 responseStream.close();
         }
     }
 
     /**
-     * If {{@link #hasAcsidToken()} returns true does nothing. Else, promotes a
-     * {@link GoogleAuthToken} into an {@link AcsidToken} by talking with the
-     * AppEngine server and adds this token to {@link #httpclient}'s cookie jar.
+     * Promotes a {@link GoogleAuthToken} into an {@link AcsidToken} by talking
+     * with the AppEngine server and adds this token to {@link #httpClient}'s
+     * cookie jar.
      * 
      * @param account
      *            The account to which the {@link GoogleAuthToken} is associated
      * @param googleAuthToken
      *            Associated to the {@link Account}
-     * @throws AuthenticationException
      * @throws InvalidGoogleAuthTokenException
      *             The token was rejected by the server
      * @throws IOException
+     *             Most likely a network failure
      */
-    private void promoteTokenIfNoCookie(final GoogleAuthToken googleAuthToken)
+    private void promoteToken(final GoogleAuthToken googleAuthToken)
             throws IOException, InvalidGoogleAuthTokenException {
-
-        if (hasAcsidToken())
-            return;
 
         final HttpGet httpGet =
                 new HttpGet(SERVER_AUTH_URL_PREFIX + googleAuthToken.value);
         /* The auth page will redirect to an url we don't care about */
         httpGet.setParams(HTTP_PARAMS_NO_REDIRECTIONS);
 
-        final HttpResponse response = this.httpclient.execute(httpGet);
+        final HttpResponse response = this.httpClient.execute(httpGet);
 
         if (response.getStatusLine().getStatusCode() == 403) {
             clearAcsidToken();
@@ -442,6 +398,21 @@ public final class Transceiver {
                         + "; assuming invalid auth token.");
 
         }
+    }
+
+    /**
+     * Associates googleAuthToken with {@link #KEY_NAME_CACHED_GOOGLE_AUTH} in
+     * the {@link #sharedPreferences}
+     * 
+     * @param googleAuthToken
+     *            The token to store
+     */
+    private void
+            setCachedGoogleAuthToken(final GoogleAuthToken googleAuthToken) {
+        this.sharedPreferences.edit()
+                .putString(KEY_NAME_CACHED_GOOGLE_AUTH, googleAuthToken.value)
+                .commit();
+
     }
 
 }

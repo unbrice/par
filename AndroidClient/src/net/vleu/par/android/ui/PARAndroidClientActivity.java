@@ -73,7 +73,8 @@ public class PARAndroidClientActivity extends Activity {
                         final EditText input =
                                 (EditText) findViewById(R.id.main_set_device_name_edittext);
                         final String deviceName = input.getText().toString();
-                        PARAndroidClientActivity.this.prefs.setDeviceName(deviceName);
+                        PARAndroidClientActivity.this.prefs
+                                .setDeviceName(deviceName);
                         SynchronizationSettings
                                 .requestUploadOnlySynchronization(PARAndroidClientActivity.this);
                     }

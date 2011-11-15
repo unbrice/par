@@ -16,24 +16,19 @@
  */
 package net.vleu.par.android.sync;
 
+import java.io.IOException;
 import java.util.List;
 
 import net.vleu.par.PlaceHolder;
-import net.vleu.par.PlaceHolder.ExchangeWithServerCallback;
-import net.vleu.par.PlaceHolder.PlaceHolderException;
 import net.vleu.par.android.Config;
 import net.vleu.par.android.DirectivesExecutor;
 import net.vleu.par.android.preferences.Preferences;
 import net.vleu.par.android.rpc.Transceiver;
-import net.vleu.par.android.rpc.Transceiver.InvalidAuthTokenException;
-import net.vleu.par.android.rpc.Transceiver.RequestedUserAuthenticationException;
 import net.vleu.par.protocolbuffer.Commands.DirectiveData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayResponseData;
-
-import org.apache.http.auth.AuthenticationException;
-
 import android.accounts.Account;
+import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -51,28 +46,6 @@ import com.google.android.c2dm.C2DMessaging;
  * Instantiated by the {@link SyncAdapter}, performs the synchronization
  */
 final class Syncer {
-    private final class MyExchangeWithServerCallback implements
-            ExchangeWithServerCallback {
-        private final String c2dmToken;
-
-        public MyExchangeWithServerCallback(final String c2dmToken) {
-            this.c2dmToken = c2dmToken;
-        }
-
-        @Override
-        public void onServerError(final GatewayRequestData request,
-                final PlaceHolderException e) {
-
-        }
-
-        @Override
-        public void onServerResponse(final GatewayRequestData request,
-                final GatewayResponseData resp) {
-            applyDirectives(resp.getDirectiveList());
-            setLastSentC2dmToken(this.c2dmToken);
-            setLastSyncTimeToNow();
-        }
-    }
 
     public static final class SynchronizationParameters {
         private final Bundle bundle;
@@ -200,6 +173,8 @@ final class Syncer {
 
     private final Preferences preferences;
 
+    private final Transceiver transceiver;
+
     /**
      * 
      * @param account
@@ -217,6 +192,7 @@ final class Syncer {
         this.keyForLastC2dmTokenKey = KEY_PREFIX_LAST_C2DM_TOKEN + account.name;
         this.parameters = parameters;
         this.preferences = preferences;
+        this.transceiver = new Transceiver(account, context);
     }
 
     private void applyDirectives(final List<DirectiveData> directives) {
@@ -287,70 +263,67 @@ final class Syncer {
         }
     }
 
-    /**
-     * @param account
-     *            The account to synchronize
-     * @param parameters
-     *            As described in {@link SynchronizationParameters}
-     * @throws Exception
-     */
     public void performSynchronization(final SyncResult syncResult) {
-        final String c2dmToken =
-                C2DMessaging.getRegistrationId(Syncer.this.context);
+        String c2dmToken = null;
         final GatewayRequestData.Builder requestBuilder =
                 GatewayRequestData.newBuilder();
-        final MyExchangeWithServerCallback calledAfterExchange =
-                new MyExchangeWithServerCallback(c2dmToken);
+        final GatewayResponseData resp;
 
         refreshAppC2DMRegistrationState(this.context);
 
-        if (this.parameters.getUploadOnly())
-            if (localDataChangedSinceLastSync())
-                PlaceHolder.addDeviceRegistrationToRequest(requestBuilder);
-            else
+        if (localDataChangedSinceLastSync()) {
+            /* Adds the registration to the request */
+            c2dmToken = C2DMessaging.getRegistrationId(Syncer.this.context);
+            if (c2dmToken.length() == 0) {
+                Log.i(TAG, "Failed registring with C2DM");
+                syncResult.stats.numIoExceptions++;
                 return;
+            }
+            PlaceHolder.addDeviceRegistrationToRequest(requestBuilder,
+                    c2dmToken);
+        }
+        else if (this.parameters.getUploadOnly())
+            /* Nothing had changed, therefore there is nothing to upload. */
+            return;
+
+        PlaceHolder.addGetDirectiveToRequest(requestBuilder);
+
+        final Transceiver.AuthUiChoice authUiChoice;
+        if (this.parameters.getManualSync())
+            authUiChoice = Transceiver.AuthUiChoice.USE_INTENT;
         else
-            PlaceHolder.addGetDirectiveToRequest(requestBuilder);
+            authUiChoice = Transceiver.AuthUiChoice.USE_NOTIFICATION;
 
         try {
-            PlaceHolder.blockingAuthenticateAccount(this.account,
-                    this.parameters.getManualSync()
-                            ? Transceiver.AuthUiChoice.USE_INTENT
-                            : Transceiver.AuthUiChoice.USE_NOTIFICATION,
-                            false);
-        }
-        catch (final AuthenticationException e) {
-            logOrDisplayErrorMessage("Authentication exception when attempting to sync.");
-            e.printStackTrace();
-            syncResult.stats.numAuthExceptions++;
-            return;
+            resp =
+                    this.transceiver.exchangeWithServer(authUiChoice,
+                            requestBuilder.build());
         }
         catch (final OperationCanceledException e) {
-            Log.i(TAG, "Sync for account " + this.account.name
+            Log.d(TAG, "Sync for account " + this.account.name
                 + " manually canceled.");
             return;
         }
-        catch (final RequestedUserAuthenticationException e) {
+        catch (final AuthenticatorException e) {
+            logOrDisplayErrorMessage("Authentication failed when attempting to sync "
+                + this.account.name);
             syncResult.stats.numAuthExceptions++;
             return;
-        }
-        catch (final InvalidAuthTokenException e) {
-            logOrDisplayErrorMessage("Invalid auth token provided by AccountManager when attempting to sync.");
-            e.printStackTrace();
-            syncResult.stats.numAuthExceptions++;
-            return;
-        }
-        catch (final Exception e) {
-            // TODO: Remove me along with the placeholder
-            throw (RuntimeException) e;
-        }
 
-        PlaceHolder.exchangeWithServer(requestBuilder.build(),
-                calledAfterExchange);
+        }
+        catch (final IOException e) {
+            Log.d(TAG, "Sync for account " + this.account.name
+                + " failed due to IO exceptions.");
+            syncResult.stats.numIoExceptions++;
+            return;
+        }
+        if (resp != null)
+            applyDirectives(resp.getDirectiveList());
+        if (c2dmToken != null)
+            setLastSentC2dmToken(c2dmToken);
+        setLastSyncTimeToNow();
 
     }
-    
-
 
     /**
      * Updates the C2DM token of the last synchronization

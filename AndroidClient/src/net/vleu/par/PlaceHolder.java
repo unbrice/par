@@ -82,7 +82,7 @@ public final class PlaceHolder {
         return false;
     }
 
-    public static void addDeviceRegistrationToRequest(Builder requestBuilder) {
+    public static void addDeviceRegistrationToRequest(Builder requestBuilder, String c2dmToken) {
         Log.w(TAG, "registerDevice");
     }
 
