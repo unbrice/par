@@ -25,6 +25,7 @@ import android.net.Uri;
 /**
  * It seems necessary to have a Content Provider in order to propose a sync
  * service. Even if it does nothing.
+ * Please do not use it.
  */
 /*
  * Note: it has android:multiprocess set to true precisely because it has no

@@ -54,12 +54,19 @@ import org.apache.http.params.HttpParams;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
+import android.accounts.AccountManagerCallback;
+import android.accounts.AccountManagerFuture;
 import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
+import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Bundle;
 import android.util.Log;
 
+/**
+ * This class is in charge for handling HTTP transport and authentication
+ */
 @ThreadSafe
 public final class Transceiver {
     /**
@@ -84,13 +91,6 @@ public final class Transceiver {
      */
     @SuppressWarnings("serial")
     public static class AuthenticationTokenExpired extends Exception {
-    }
-
-    /**
-     * Allows to select the way that will be used to communicate with the user
-     */
-    public enum AuthUiChoice {
-        USE_INTENT, USE_NOTIFICATION
     }
 
     /**
@@ -119,6 +119,11 @@ public final class Transceiver {
 
     private static final String APPENGINE_TOKEN_TYPE = "ah";
 
+    public static final String[] GOOGLE_ACCOUNT_REQUIRED_SYNCABILITY_FEATURES =
+            new String[] { "service_ah" };
+
+    public static final String GOOGLE_ACCOUNT_TYPE = "com.google";
+
     /**
      * Can be used as an argument to {@link HttpGet#setParams(HttpParams)} to
      * disable redirections
@@ -143,6 +148,75 @@ public final class Transceiver {
 
     private static String TAG = Config.makeLogTag(Transceiver.class);
 
+    /**
+     * Ensures that application has a fresh permission from the user to use all
+     * of his Google accounts
+     * 
+     * @param activity
+     *            The Activity context to use for launching a new sub-Activity
+     *            to prompt the user for a password if necessary; used only to
+     *            call startActivity(); must not be null.
+     * @param onUserResponse
+     *            If not null, will be called in the main thread after the user
+     *            answered for all accounts
+     */
+    public static void askUserForPermissionsIfNecessary(
+            final Activity activity, final Runnable onUserResponse) {
+        final Account[] allAcounts = listGoogleAccounts(activity);
+        final Runnable callback = new Runnable() {
+            int count = 0;
+
+            @Override
+            public void run() {
+                this.count++;
+                if (this.count == allAcounts.length && onUserResponse != null)
+                    onUserResponse.run();
+            }
+        };
+        for (final Account account : allAcounts)
+            askUserForSinglePermissionIfNecessary(activity, callback, account);
+    }
+
+    /**
+     * Ensures that application has a fresh permission from the user to use his
+     * account
+     * 
+     * @param activity
+     *            The Activity context to use for launching a new sub-Activity
+     *            to prompt the user for a password if necessary; used only to
+     *            call startActivity(); must not be null.
+     * @param onUserResponse
+     *            If not null, will be called in the main thread after the user
+     *            answered
+     */
+    public static void askUserForSinglePermissionIfNecessary(
+            final Activity activity, final Runnable onUserResponse,
+            final Account account) {
+        final AccountManager am = AccountManager.get(activity);
+        final AccountManagerCallback<Bundle> callback =
+                new AccountManagerCallback<Bundle>() {
+                    @Override
+                    public void run(final AccountManagerFuture<Bundle> bundle) {
+                        if (onUserResponse != null)
+                            activity.runOnUiThread(onUserResponse);
+                    }
+                };
+        am.getAuthToken(account, APPENGINE_TOKEN_TYPE, null, activity,
+                callback, null);
+    }
+
+    /**
+     * Lists all Google accounts on this device
+     * 
+     * @param context
+     *            Won't be kept anywhere
+     * @return A possibly empty array of Google Accounts
+     */
+    public static Account[] listGoogleAccounts(final Context context) {
+        final AccountManager am = AccountManager.get(context);
+        return am.getAccountsByType(GOOGLE_ACCOUNT_TYPE);
+    }
+
     private final Account account;
 
     private final Context context;
@@ -166,15 +240,10 @@ public final class Transceiver {
 
     /**
      * This method may block while a network request completes, and must never
-     * be made from the main thread.
+     * be made from the main thread. It requests a new GoogleAuthToken.
      * 
      * @param account
      *            The account to fetch an auth token for
-     * @param uiChoice
-     *            If {@link AuthUiChoice#USE_NOTIFICATION}, display a
-     *            notification and return null if authentication fails; if
-     *            {@link AuthUiChoice#USE_INTENT}, prompt and wait for the user
-     *            to re-enter correct credentials before returning
      * @return A token associated with this account
      * @throws OperationCanceledException
      *             if the request was canceled for any reason, including the
@@ -185,15 +254,19 @@ public final class Transceiver {
      *             if the authenticator experienced an I/O problem creating a
      *             new auth token, usually because of network trouble
      */
-    private GoogleAuthToken
-            blockingGetNewAuthToken(final AuthUiChoice uiChoice)
-                    throws OperationCanceledException, AuthenticatorException,
-                    IOException {
+    private GoogleAuthToken blockingGetNewAuthToken()
+            throws OperationCanceledException, AuthenticatorException,
+            IOException {
         final AccountManager am = AccountManager.get(this.context);
         final String authTokenStr =
                 am.blockingGetAuthToken(this.account, APPENGINE_TOKEN_TYPE,
-                        uiChoice == AuthUiChoice.USE_NOTIFICATION);
-        return new GoogleAuthToken(authTokenStr);
+                        true);
+        Log.d(TAG, "Got a new GoogleAuthToken for account: "
+            + this.account.name + ": " + authTokenStr);
+        if (authTokenStr == null)
+            throw new AuthenticatorException("Could not get an auth token");
+        else
+            return new GoogleAuthToken(authTokenStr);
     }
 
     /**
@@ -205,11 +278,18 @@ public final class Transceiver {
 
     /**
      * Clears the cached {@link GoogleAuthToken} stored in the
-     * {@link #sharedPreferences}
+     * {@link #sharedPreferences} and the {@link AccountManager}
      */
     private void clearCachedGoogleAuthToken() {
-        this.sharedPreferences.edit().remove(KEY_NAME_CACHED_GOOGLE_AUTH)
-                .commit();
+        if (getCachedGoogleAuthToken() != null) {
+            final AccountManager am = AccountManager.get(this.context);
+            Log.d(TAG, "Deleting GoogleAuthToken : "
+                + getCachedGoogleAuthToken().value);
+            am.invalidateAuthToken(APPENGINE_TOKEN_TYPE,
+                    getCachedGoogleAuthToken().value);
+            this.sharedPreferences.edit().remove(KEY_NAME_CACHED_GOOGLE_AUTH)
+                    .commit();
+        }
     }
 
     /**
@@ -219,19 +299,17 @@ public final class Transceiver {
         this.httpClient.getConnectionManager().shutdown();
     }
 
-
     /**
-     * Performs authentication if necessary, then exchange the data with the server and
-     * returns the response
-     * @param uiChoice
+     * Performs authentication if necessary, then exchange the data with the
+     * server and returns the response
+     * 
      * @param request
      * @return The response to the request, null if none
      * @throws IOException
      * @throws OperationCanceledException
      * @throws AuthenticatorException
      */
-    public GatewayResponseData exchangeWithServer(final AuthUiChoice uiChoice,
-     
+    public GatewayResponseData exchangeWithServer(
             final GatewayRequestData request) throws IOException,
             OperationCanceledException, AuthenticatorException {
         final int maxRetries = 10;
@@ -239,7 +317,7 @@ public final class Transceiver {
             /* Gets Google Auth Token */
             GoogleAuthToken googleAuthToken = getCachedGoogleAuthToken();
             if (googleAuthToken == null) {
-                googleAuthToken = blockingGetNewAuthToken(uiChoice);
+                googleAuthToken = blockingGetNewAuthToken();
                 setCachedGoogleAuthToken(googleAuthToken);
                 clearAcsidToken();
             }
@@ -250,11 +328,11 @@ public final class Transceiver {
                     promoteToken(googleAuthToken);
                 }
                 catch (final InvalidGoogleAuthTokenException e) {
-                    Log.e(TAG,
+                    Log.w(TAG,
                             "The google auth token is invalid. Refreshing all cookies. "
                                 + e.toString());
-                    clearAcsidToken();
                     clearCachedGoogleAuthToken();
+                    clearAcsidToken();
                     continue;
                 }
 
@@ -294,6 +372,8 @@ public final class Transceiver {
      *         {@link #sharedPreferences}, null if there is none
      */
     private GoogleAuthToken getCachedGoogleAuthToken() {
+        // TODO: Check this cache is necessary, the AccountManager might already
+        // be doing this
         final String resultAsString =
                 this.sharedPreferences.getString(KEY_NAME_CACHED_GOOGLE_AUTH,
                         null);
@@ -335,9 +415,10 @@ public final class Transceiver {
         final ByteArrayEntity requestEntity =
                 new ByteArrayEntity(request.toByteArray());
         InputStream responseStream = null;
+        HttpResponse response = null;
         httpRequest.setEntity(requestEntity);
         try {
-            final HttpResponse response = this.httpClient.execute(httpRequest);
+            response = this.httpClient.execute(httpRequest);
             final int statusCode = response.getStatusLine().getStatusCode();
 
             if (statusCode == 403)
@@ -355,6 +436,9 @@ public final class Transceiver {
             httpRequest.abort();
             if (responseStream != null)
                 responseStream.close();
+            /*
+             * if (response != null) response.getEntity().consumeContent();
+             */
         }
     }
 
@@ -375,12 +459,23 @@ public final class Transceiver {
     private void promoteToken(final GoogleAuthToken googleAuthToken)
             throws IOException, InvalidGoogleAuthTokenException {
 
-        final HttpGet httpGet =
-                new HttpGet(SERVER_AUTH_URL_PREFIX + googleAuthToken.value);
-        /* The auth page will redirect to an url we don't care about */
-        httpGet.setParams(HTTP_PARAMS_NO_REDIRECTIONS);
+        HttpResponse response = null;
+        HttpGet request = null;
+        try {
+            request =
+                    new HttpGet(SERVER_AUTH_URL_PREFIX + googleAuthToken.value);
+            /* The auth page will redirect to an url we don't care about */
+            request.setParams(HTTP_PARAMS_NO_REDIRECTIONS);
 
-        final HttpResponse response = this.httpClient.execute(httpGet);
+            response = this.httpClient.execute(request);
+        }
+        finally {
+            if (request != null)
+                request.abort();
+            /*
+             * if (response != null) response.getEntity().consumeContent();
+             */
+        }
 
         if (response.getStatusLine().getStatusCode() == 403) {
             clearAcsidToken();

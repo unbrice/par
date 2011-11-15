@@ -17,13 +17,17 @@
 package net.vleu.par.android.sync;
 
 import net.vleu.par.android.Config;
+import net.vleu.par.android.rpc.Transceiver;
 import android.accounts.Account;
-import android.accounts.AccountManager;
 import android.content.ContentResolver;
 import android.content.Context;
 
-public final class SynchronizationSettings {
-    
+/**
+ * This class should be used from outside the package (like by the UI) to
+ * control synchronization.
+ */
+public final class SynchronizationControler {
+
     /**
      * Enables synchronization for this service (but if Master synchronization
      * is disabled, no data will be exchanged)
@@ -32,18 +36,13 @@ public final class SynchronizationSettings {
      *            Used to access the account manager, no reference will be kept.
      */
     public static void enableAutomaticSync(final Context context) {
-        for (final Account account : getGoogleAccounts(context))
+        for (final Account account : Transceiver.listGoogleAccounts(context))
             if (account.type.equals(Config.GOOGLE_ACCOUNT_TYPE)) {
                 ContentResolver
                         .setIsSyncable(account, Config.SYNC_AUTHORITY, 1);
                 ContentResolver.setSyncAutomatically(account,
                         Config.SYNC_AUTHORITY, true);
             }
-    }
-
-    private static Account[] getGoogleAccounts(final Context context) {
-        final AccountManager am = AccountManager.get(context);
-        return am.getAccountsByType(Config.GOOGLE_ACCOUNT_TYPE);
     }
 
     /**
@@ -53,7 +52,8 @@ public final class SynchronizationSettings {
      */
     public static boolean isAutoSyncDesired(final Context context) {
         if (ContentResolver.getMasterSyncAutomatically())
-            for (final Account account : getGoogleAccounts(context))
+            for (final Account account : Transceiver
+                    .listGoogleAccounts(context))
                 if (ContentResolver.getIsSyncable(account,
                         Config.SYNC_AUTHORITY) > 0
                     && ContentResolver.getSyncAutomatically(account,
@@ -75,14 +75,9 @@ public final class SynchronizationSettings {
                 new Syncer.SynchronizationParameters();
         bundle.setManualSync(true);
         bundle.setUploadOnly(uploadOnly);
-        final Account[] accounts = getGoogleAccounts(context);
-        if (accounts.length > 0) {
-            final Account anySuitableAccount =
-                    new Account(accounts[0].name,
-                            SyncAdapter.GOOGLE_ACCOUNT_TYPE);
-            ContentResolver.requestSync(anySuitableAccount,
-                    Config.SYNC_AUTHORITY, bundle.getBundle());
-        }
+        for (final Account account : Transceiver.listGoogleAccounts(context))
+            ContentResolver.requestSync(account, Config.SYNC_AUTHORITY,
+                    bundle.getBundle());
     }
 
     /** Triggers a synchronization if an account exists for this account */
@@ -90,6 +85,6 @@ public final class SynchronizationSettings {
         requestSynchronization(context, true);
     }
 
-    private SynchronizationSettings() {
+    private SynchronizationControler() {
     }
 }

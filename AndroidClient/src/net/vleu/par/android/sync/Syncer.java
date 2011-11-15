@@ -134,7 +134,7 @@ final class Syncer {
         // sure we are
         // registered with the C2DM servers. If not, unregister the application.
         final boolean autoSyncEnabled =
-                SynchronizationSettings.isAutoSyncDesired(context);
+                SynchronizationControler.isAutoSyncDesired(context);
 
         final boolean c2dmRegistered =
                 !C2DMessaging.getRegistrationId(context).equals("");
@@ -288,16 +288,8 @@ final class Syncer {
 
         PlaceHolder.addGetDirectiveToRequest(requestBuilder);
 
-        final Transceiver.AuthUiChoice authUiChoice;
-        if (this.parameters.getManualSync())
-            authUiChoice = Transceiver.AuthUiChoice.USE_INTENT;
-        else
-            authUiChoice = Transceiver.AuthUiChoice.USE_NOTIFICATION;
-
         try {
-            resp =
-                    this.transceiver.exchangeWithServer(authUiChoice,
-                            requestBuilder.build());
+            resp = this.transceiver.exchangeWithServer(requestBuilder.build());
         }
         catch (final OperationCanceledException e) {
             Log.d(TAG, "Sync for account " + this.account.name
@@ -313,7 +305,7 @@ final class Syncer {
         }
         catch (final IOException e) {
             Log.d(TAG, "Sync for account " + this.account.name
-                + " failed due to IO exceptions.");
+                + " failed due to an IO exception : " + e);
             syncResult.stats.numIoExceptions++;
             return;
         }

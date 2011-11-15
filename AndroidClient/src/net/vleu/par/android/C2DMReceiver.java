@@ -17,7 +17,7 @@
     
 package net.vleu.par.android;
 
-import net.vleu.par.android.sync.SynchronizationSettings;
+import net.vleu.par.android.sync.SynchronizationControler;
 import android.content.Context;
 import android.content.Intent;
 import android.widget.Toast;
@@ -44,6 +44,6 @@ public class C2DMReceiver extends C2DMBaseReceiver {
 
     @Override
     protected void onMessage(final Context context, final Intent intent) {
-        SynchronizationSettings.requestBidirectionalSynchronization(context);
+        SynchronizationControler.requestBidirectionalSynchronization(context);
     }
 }

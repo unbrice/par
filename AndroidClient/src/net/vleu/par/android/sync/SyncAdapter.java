@@ -29,13 +29,10 @@ import android.os.Bundle;
  * The glue between the {@link SyncService} and the {@link Syncer} There is only
  * one instance in a given process, created by the {@link SyncService}
  */
-public final class SyncAdapter extends AbstractThreadedSyncAdapter {
+final class SyncAdapter extends AbstractThreadedSyncAdapter {
     public static final String DEVICE_TYPE = "android";
     public static final String DM_REGISTERED = "dm_registered";
 
-    public static final String[] GOOGLE_ACCOUNT_REQUIRED_SYNCABILITY_FEATURES =
-            new String[] { "service_ah" };
-    public static final String GOOGLE_ACCOUNT_TYPE = "com.google";
     public static final String LAST_SYNC = "last_sync";
     public static final String SERVER_LAST_SYNC = "server_last_sync";
 

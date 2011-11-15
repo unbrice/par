@@ -2,7 +2,8 @@ package net.vleu.par.android.ui;
 
 import net.vleu.par.android.R;
 import net.vleu.par.android.preferences.Preferences;
-import net.vleu.par.android.sync.SynchronizationSettings;
+import net.vleu.par.android.rpc.Transceiver;
+import net.vleu.par.android.sync.SynchronizationControler;
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
@@ -11,6 +12,15 @@ import android.widget.Button;
 import android.widget.EditText;
 
 public class PARAndroidClientActivity extends Activity {
+    private class SynchronizationRequester implements Runnable {
+        @Override
+        public void run() {
+            SynchronizationControler
+                    .requestUploadOnlySynchronization(PARAndroidClientActivity.this);
+        }
+
+    }
+
     /**
      * @return true if both are argument are equal or if one of them is null
      */
@@ -75,8 +85,9 @@ public class PARAndroidClientActivity extends Activity {
                         final String deviceName = input.getText().toString();
                         PARAndroidClientActivity.this.prefs
                                 .setDeviceName(deviceName);
-                        SynchronizationSettings
-                                .requestUploadOnlySynchronization(PARAndroidClientActivity.this);
+                        Transceiver.askUserForPermissionsIfNecessary(
+                                PARAndroidClientActivity.this,
+                                new SynchronizationRequester());
                     }
                 });
     }
