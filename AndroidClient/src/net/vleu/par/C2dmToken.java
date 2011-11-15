@@ -1,8 +1,3 @@
-package net.vleu.par;
-
-import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.Builder;
-import android.util.Log;
-
 /*
  * Copyright ©2011 Brice Arnould
  *
@@ -19,24 +14,14 @@ import android.util.Log;
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+package net.vleu.par;
 
 /**
- * Bunch of static methods that acts as placeholder for the real code
+ * Typesafe wrapper for the strings that Android's C2DM uses to identify
+ * devices.
  */
-public final class PlaceHolder {
-
-    private static final String TAG = "PlaceHolder";
-
-    public static void addDeviceRegistrationToRequest(
-            final Builder requestBuilder, final String c2dmToken) {
-        Log.w(TAG, "registerDevice");
-    }
-
-    public static void addGetDirectiveToRequest(final Builder requestBuilder) {
-        Log.w(TAG, "addGetDirectiveToRequest");
-
-    }
-
-    private PlaceHolder() {
+public final class C2dmToken extends WrappedString {
+    public C2dmToken(final String value) {
+        super(value);
     }
 }

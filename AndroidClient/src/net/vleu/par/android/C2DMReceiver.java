@@ -20,6 +20,7 @@ package net.vleu.par.android;
 import net.vleu.par.android.sync.SynchronizationControler;
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.google.android.c2dm.C2DMBaseReceiver;
@@ -38,7 +39,9 @@ public class C2DMReceiver extends C2DMBaseReceiver {
 
     @Override
     public void onError(final Context context, final String errorId) {
-        Toast.makeText(context, "Messaging registration error: " + errorId,
+        String message = "Messaging registration error: " + errorId;
+        Log.w(TAG, message);
+        Toast.makeText(context, message,
                 Toast.LENGTH_LONG).show();
     }
 

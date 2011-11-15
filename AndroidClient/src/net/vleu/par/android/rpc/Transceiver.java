@@ -51,6 +51,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
+import org.apache.http.util.EntityUtils;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
@@ -70,23 +71,7 @@ import android.util.Log;
 @ThreadSafe
 public final class Transceiver {
     /**
-     * Simple wrapper for an ACSID token, as per Google App Engine
-     */
-    public static final class AcsidToken extends WrappedString {
-        public AcsidToken(final String value) {
-            super(value);
-        }
-
-        public Cookie asCookie() {
-            final BasicClientCookie cookie =
-                    new BasicClientCookie("ACSID", this.value);
-            cookie.setDomain(Config.SERVER_DOMAIN);
-            return cookie;
-        }
-    }
-
-    /**
-     * Thrown when a {@link GoogleAuthToken} or an {@link AcsidToken} we have
+     * Thrown when a {@link GoogleAuthToken} or an {@link SacsidToken} we have
      * been using has expired and needs to be renewed.
      */
     @SuppressWarnings("serial")
@@ -117,6 +102,22 @@ public final class Transceiver {
         }
     }
 
+    /**
+     * Simple wrapper for an SACSID token, as per Google App Engine
+     */
+    public static final class SacsidToken extends WrappedString {
+        public SacsidToken(final String value) {
+            super(value);
+        }
+
+        public Cookie asCookie() {
+            final BasicClientCookie cookie =
+                    new BasicClientCookie("SACSID", this.value);
+            cookie.setDomain(Config.SERVER_DOMAIN);
+            return cookie;
+        }
+    }
+
     private static final String APPENGINE_TOKEN_TYPE = "ah";
 
     public static final String[] GOOGLE_ACCOUNT_REQUIRED_SYNCABILITY_FEATURES =
@@ -131,15 +132,6 @@ public final class Transceiver {
     private static final HttpParams HTTP_PARAMS_NO_REDIRECTIONS =
             (new BasicHttpParams()).setBooleanParameter(
                     ClientPNames.HANDLE_REDIRECTS, false);
-
-    /**
-     * Used by {@link #setCachedGoogleAuthToken(GoogleAuthToken)},
-     * {@link #clearCachedGoogleAuthToken()} and
-     * {@link #getCachedGoogleAuthToken()} to store the latest
-     * {@link GoogleAuthToken} in the {@link #sharedPreferences}
-     */
-    private static final String KEY_NAME_CACHED_GOOGLE_AUTH =
-            "cached_google_auth";
 
     private static final String SERVER_AUTH_URL_PREFIX = Config.SERVER_BASE_URL
         + "/_ah/login?continue=http://localhost/&auth=";
@@ -266,30 +258,16 @@ public final class Transceiver {
         if (authTokenStr == null)
             throw new AuthenticatorException("Could not get an auth token");
         else
-            return new GoogleAuthToken(authTokenStr);
+            // return new GoogleAuthToken(authTokenStr);
+            return new GoogleAuthToken(
+                    "DQAAAEQBAADgWo7arlxrkkC3rhu3BKsd3BWLkxYDBX88yjMw3hXzNPrXqoZK6-FrJzTyDpOc4qhnv0daT6QgFQr4DYPSEfVZnlMBFTE_jKyR0UJRC73tbGd7Alz8mrUcHi7ODAxuXB-C4g5iGEsUyNFGPw8P6KGcRQVNrdGiq4CNDogZ5fJDziFXZ0SUHmcCGIlF8Pj_L57mZ3fp9xbbxI4Gw2MgUYbVKvkd5cGnCz3fPME5ZD6ohcurNcZ8Tm-P59lNkV1mPFG6iNE8QAD6XoDZen2wHwjkwg0tdQRlgTGrQs3w5Vgwi1CpaIFIGAtN6Wiq_SDzLdq3EHfRXkFiplPzXczN-7LsWw-V2T0XNwsD5xUOFfYgCkmGDwsaEi8Ua8hsUntOTQ3tuAxYrAcyXaNeWMOZzOnhmaXbbqr_7iFgMgrgZygbqJf3Hm-OHrlcFYjRVuR54vM");
     }
 
     /**
-     * Clears the Acsid token we might have had
+     * Clears the SACSID token we might have had
      */
-    public void clearAcsidToken() {
+    public void clearSacsidToken() {
         this.httpClient.getCookieStore().clear();
-    }
-
-    /**
-     * Clears the cached {@link GoogleAuthToken} stored in the
-     * {@link #sharedPreferences} and the {@link AccountManager}
-     */
-    private void clearCachedGoogleAuthToken() {
-        if (getCachedGoogleAuthToken() != null) {
-            final AccountManager am = AccountManager.get(this.context);
-            Log.d(TAG, "Deleting GoogleAuthToken : "
-                + getCachedGoogleAuthToken().value);
-            am.invalidateAuthToken(APPENGINE_TOKEN_TYPE,
-                    getCachedGoogleAuthToken().value);
-            this.sharedPreferences.edit().remove(KEY_NAME_CACHED_GOOGLE_AUTH)
-                    .commit();
-        }
     }
 
     /**
@@ -314,16 +292,10 @@ public final class Transceiver {
             OperationCanceledException, AuthenticatorException {
         final int maxRetries = 10;
         for (int retry = 0; retry < maxRetries; retry++) {
-            /* Gets Google Auth Token */
-            GoogleAuthToken googleAuthToken = getCachedGoogleAuthToken();
-            if (googleAuthToken == null) {
-                googleAuthToken = blockingGetNewAuthToken();
-                setCachedGoogleAuthToken(googleAuthToken);
-                clearAcsidToken();
-            }
-
-            /* Promotes to ACSID Token */
-            if (!hasAcsidToken())
+            /* Gets Google Auth Token and promotes it to an SACSID Token */
+            if (!hasSacsidToken()) {
+                final GoogleAuthToken googleAuthToken =
+                        blockingGetNewAuthToken();
                 try {
                     promoteToken(googleAuthToken);
                 }
@@ -331,70 +303,52 @@ public final class Transceiver {
                     Log.w(TAG,
                             "The google auth token is invalid. Refreshing all cookies. "
                                 + e.toString());
-                    clearCachedGoogleAuthToken();
-                    clearAcsidToken();
+                    invalidatesGoogleAuthToken(googleAuthToken);
+                    clearSacsidToken();
                     continue;
                 }
-
+            }
             /* Executes the query */
             try {
                 return postData(request);
             }
             catch (final AuthenticationTokenExpired e) {
-                Log.w(TAG, "Google and/or ACSID tokens expired. Retried "
+                clearSacsidToken();
+                Log.w(TAG, "Google and/or SACSID tokens expired. Retried "
                     + retry + " times.");
                 continue;
             }
         }
         final String failureMessage =
-                "Failed to get valid Google and ACSID tokens !";
+                "Failed to get valid Google and SACSID tokens !";
         Log.e(TAG, failureMessage);
         throw new AuthenticatorException(failureMessage);
     }
 
     /**
-     * Goes through {@link #httpClient}'s cookies to find an {@link AcsidToken}.
-     * 
-     * @return The token if it finds one, else null
-     */
-    public AcsidToken getAcsidToken() {
-        final List<Cookie> cookies =
-                this.httpClient.getCookieStore().getCookies();
-        for (final Cookie cookie : cookies)
-            if (cookie.getName().equals("ACSID"))
-                return new AcsidToken(cookie.getValue());
-        return null;
-    }
-
-    /**
-     * @return the googleAuthToken associated with
-     *         {@link #KEY_NAME_CACHED_GOOGLE_AUTH} in the
-     *         {@link #sharedPreferences}, null if there is none
-     */
-    private GoogleAuthToken getCachedGoogleAuthToken() {
-        // TODO: Check this cache is necessary, the AccountManager might already
-        // be doing this
-        final String resultAsString =
-                this.sharedPreferences.getString(KEY_NAME_CACHED_GOOGLE_AUTH,
-                        null);
-        if (resultAsString == null)
-            return null;
-        else
-            return new GoogleAuthToken(resultAsString);
-    }
-
-    /**
-     * Goes through {@link #httpClient}'s cookies to find an {@link AcsidToken}.
+     * Goes through {@link #httpClient}'s cookies to find an {@link SacsidToken}
      * 
      * @return true if it finds one, else false
      */
-    public boolean hasAcsidToken() {
+    public boolean hasSacsidToken() {
         final List<Cookie> cookies =
                 this.httpClient.getCookieStore().getCookies();
         for (final Cookie cookie : cookies)
-            if (cookie.getName().equals("ACSID"))
+            if (cookie.getName().equals("SACSID"))
                 return true;
         return false;
+    }
+
+    /**
+     * Invalidates the {@link GoogleAuthToken} stored in the
+     * {@link AccountManager}
+     */
+    private void invalidatesGoogleAuthToken(final GoogleAuthToken token) {
+        if (token != null) {
+            final AccountManager am = AccountManager.get(this.context);
+            Log.d(TAG, "Invalidating GoogleAuthToken : " + token.value);
+            am.invalidateAuthToken(APPENGINE_TOKEN_TYPE, token.value);
+        }
     }
 
     /**
@@ -423,10 +377,14 @@ public final class Transceiver {
 
             if (statusCode == 403)
                 throw new AuthenticationTokenExpired();
-            else if (statusCode != 200)
-                throw new IOException("Status code is: " + statusCode);
             else if (response.getEntity() == null)
                 return null;
+            else if (statusCode != 200) {
+                final String answer =
+                        EntityUtils.toString(response.getEntity());
+                throw new IOException("GAE server answered code: " + statusCode
+                    + "; message: " + answer);
+            }
             else {
                 responseStream = response.getEntity().getContent();
                 return GatewayResponseData.parseFrom(responseStream);
@@ -443,7 +401,7 @@ public final class Transceiver {
     }
 
     /**
-     * Promotes a {@link GoogleAuthToken} into an {@link AcsidToken} by talking
+     * Promotes a {@link GoogleAuthToken} into an {@link SacsidToken} by talking
      * with the AppEngine server and adds this token to {@link #httpClient}'s
      * cookie jar.
      * 
@@ -478,36 +436,21 @@ public final class Transceiver {
         }
 
         if (response.getStatusLine().getStatusCode() == 403) {
-            clearAcsidToken();
+            clearSacsidToken();
             throw new InvalidGoogleAuthTokenException(
                     "Token rejected by the server");
         }
 
-        if (!hasAcsidToken()) {
-            clearAcsidToken();
-            // If no ACSID cookie was passed, it usually means the auth
+        if (!hasSacsidToken()) {
+            clearSacsidToken();
+            // If no SACSID cookie was passed, it usually means the auth
             // token was invalid;
             throw new InvalidGoogleAuthTokenException(
-                    "ACSID cookie not found in HTTP response: "
+                    "SACSID cookie not found in HTTP response: "
                         + response.getStatusLine().toString()
                         + "; assuming invalid auth token.");
 
         }
-    }
-
-    /**
-     * Associates googleAuthToken with {@link #KEY_NAME_CACHED_GOOGLE_AUTH} in
-     * the {@link #sharedPreferences}
-     * 
-     * @param googleAuthToken
-     *            The token to store
-     */
-    private void
-            setCachedGoogleAuthToken(final GoogleAuthToken googleAuthToken) {
-        this.sharedPreferences.edit()
-                .putString(KEY_NAME_CACHED_GOOGLE_AUTH, googleAuthToken.value)
-                .commit();
-
     }
 
 }

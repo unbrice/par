@@ -19,10 +19,11 @@ package net.vleu.par.android.sync;
 import java.io.IOException;
 import java.util.List;
 
-import net.vleu.par.PlaceHolder;
+import net.vleu.par.C2dmToken;
 import net.vleu.par.android.Config;
 import net.vleu.par.android.DirectivesExecutor;
 import net.vleu.par.android.preferences.Preferences;
+import net.vleu.par.android.rpc.RequestMaker;
 import net.vleu.par.android.rpc.Transceiver;
 import net.vleu.par.protocolbuffer.Commands.DirectiveData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData;
@@ -173,6 +174,8 @@ final class Syncer {
 
     private final Preferences preferences;
 
+    private final RequestMaker requestMaker;
+
     private final Transceiver transceiver;
 
     /**
@@ -191,6 +194,7 @@ final class Syncer {
         this.keyForLastSyncMs = KEY_PREFIX_LAST_SYNC_MS + account.name;
         this.keyForLastC2dmTokenKey = KEY_PREFIX_LAST_C2DM_TOKEN + account.name;
         this.parameters = parameters;
+        this.requestMaker = new RequestMaker(context);
         this.preferences = preferences;
         this.transceiver = new Transceiver(account, context);
     }
@@ -226,8 +230,8 @@ final class Syncer {
     }
 
     /**
-     * @return whether preferences have been modified since last upload for this
-     *         account
+     * @return whether preferences or the C2DM token have changed since last
+     *         upload for this account
      */
     private boolean localDataChangedSinceLastSync() {
         if (!C2DMessaging.getRegistrationId(this.context).equals(
@@ -264,29 +268,39 @@ final class Syncer {
     }
 
     public void performSynchronization(final SyncResult syncResult) {
-        String c2dmToken = null;
+        final boolean newLocalData = localDataChangedSinceLastSync();
+        final boolean uploadOnly = this.parameters.getUploadOnly();
+        C2dmToken c2dmToken = null;
         final GatewayRequestData.Builder requestBuilder =
                 GatewayRequestData.newBuilder();
         final GatewayResponseData resp;
 
         refreshAppC2DMRegistrationState(this.context);
 
-        if (localDataChangedSinceLastSync()) {
-            /* Adds the registration to the request */
-            c2dmToken = C2DMessaging.getRegistrationId(Syncer.this.context);
-            if (c2dmToken.length() == 0) {
+        if (newLocalData) {
+            /* Tries adding the registration to the request */
+            final String c2dmTokenStr =
+                    C2DMessaging.getRegistrationId(Syncer.this.context);
+            if (c2dmTokenStr.length() == 0) {
                 Log.i(TAG, "Failed registring with C2DM");
                 syncResult.stats.numIoExceptions++;
                 return;
             }
-            PlaceHolder.addDeviceRegistrationToRequest(requestBuilder,
-                    c2dmToken);
+            else {
+                c2dmToken = new C2dmToken(c2dmTokenStr);
+                requestBuilder.addRegisterDevice(this.requestMaker
+                        .makeRegisterDeviceData(c2dmToken));
+            }
         }
-        else if (this.parameters.getUploadOnly())
-            /* Nothing had changed, therefore there is nothing to upload. */
-            return;
 
-        PlaceHolder.addGetDirectiveToRequest(requestBuilder);
+        if (uploadOnly) {
+            if (!newLocalData)
+                /* Nothing had changed, therefore there is nothing to upload. */
+                return;
+        }
+        else
+            requestBuilder.addGetDeviceDirectives(this.requestMaker
+                    .makeGetDirectivesData());
 
         try {
             resp = this.transceiver.exchangeWithServer(requestBuilder.build());
@@ -314,19 +328,18 @@ final class Syncer {
         if (c2dmToken != null)
             setLastSentC2dmToken(c2dmToken);
         setLastSyncTimeToNow();
-
     }
 
     /**
      * Updates the C2DM token of the last synchronization
      * 
-     * @param value
+     * @param token
      *            The C2DM token registered the last time the account was synced
      */
-    private void setLastSentC2dmToken(final String value) {
+    private void setLastSentC2dmToken(final C2dmToken token) {
         // TODO: Use apply
-        getSyncMetadata().edit().putString(this.keyForLastC2dmTokenKey, value)
-                .commit();
+        getSyncMetadata().edit()
+                .putString(this.keyForLastC2dmTokenKey, token.value).commit();
     }
 
     /**
