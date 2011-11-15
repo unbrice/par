@@ -1,12 +1,6 @@
 package net.vleu.par;
 
-import net.vleu.par.android.Config;
-import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.Builder;
-import net.vleu.par.protocolbuffer.GatewayCommands.GatewayResponseData;
-import android.accounts.Account;
-import android.content.ContentResolver;
-import android.net.Uri;
 import android.util.Log;
 
 /*
@@ -31,67 +25,18 @@ import android.util.Log;
  */
 public final class PlaceHolder {
 
-    @SuppressWarnings("serial")
-    public static class PlaceHolderException extends RuntimeException {
-        private PlaceHolderException() {
-
-        }
-    }
-
-    static final String EMPTY_ACCOUNT_NAME = "-";
-
-    public static final Uri ROOT_URI = new Uri.Builder()
-            .scheme(ContentResolver.SCHEME_CONTENT)
-            .authority(Config.SYNC_AUTHORITY).appendPath("notes").build();
-
     private static final String TAG = "PlaceHolder";
 
-    public static void blockingAuthenticateAccount(final Object... ignored)
-            throws Exception {
-        Log.w(TAG, "blockingAuthenticateAccount");
-
-    }
-
-
-    public static Uri buildNoteListUri(final String accountName) {
-        return Uri.withAppendedPath(ROOT_URI, accountName == null
-                ? EMPTY_ACCOUNT_NAME : accountName);
-    }
-
-    public static Uri buildNoteUri(final String accountName, final long noteId) {
-        return Uri.withAppendedPath(buildNoteListUri(accountName),
-                Long.toString(noteId));
-    }
-
-    /**
-     * @param account
-     */
-    public static void fetchOrderFromAccount(final Account account) {
-        Log.w(TAG, "fetchOrderFromAccount " + account.name);
-    }
-
-    public static String getAccountNameFromUri(final Uri uri) {
-        if (!uri.toString().startsWith(ROOT_URI.toString()))
-            throw new IllegalArgumentException("Uri is not a JumpNote URI.");
-
-        return uri.getPathSegments().get(1);
-    }
-
-    public static boolean hasNewStuffToUpload() {
-        Log.w(TAG, "needToReRegister");
-        return false;
-    }
-
-    public static void addDeviceRegistrationToRequest(Builder requestBuilder, String c2dmToken) {
+    public static void addDeviceRegistrationToRequest(
+            final Builder requestBuilder, final String c2dmToken) {
         Log.w(TAG, "registerDevice");
     }
 
-    private PlaceHolder() {
+    public static void addGetDirectiveToRequest(final Builder requestBuilder) {
+        Log.w(TAG, "addGetDirectiveToRequest");
+
     }
 
-
-    public static void addGetDirectiveToRequest(Builder requestBuilder) {
-        Log.w(TAG, "addGetDirectiveToRequest");
-        
+    private PlaceHolder() {
     }
 }

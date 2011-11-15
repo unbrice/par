@@ -29,7 +29,7 @@ public final class Config  {
     public static final String SYNC_AUTHORITY = "net.vleu.par.android";
     public static final String GOOGLE_ACCOUNT_TYPE = "com.google";
 
-    public static final String SERVER_DOMAIN = "vleupar.appengine.com";
+    public static final String SERVER_DOMAIN = "vleupar.appspot.com";
     public static final String SERVER_BASE_URL = "https://" + SERVER_DOMAIN;
     public static final String SERVER_RPC_URL = SERVER_BASE_URL + "/api/0";
 
