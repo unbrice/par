@@ -141,9 +141,12 @@ final class Syncer {
                 !C2DMessaging.getRegistrationId(context).equals("");
 
         if (c2dmRegistered != autoSyncEnabled) {
-            Log.i(TAG, "System-wide desirability for auto sync has changed; "
-                + (autoSyncEnabled ? "registering" : "unregistering")
-                + " application with C2DM servers.");
+            if (Log.isLoggable(TAG, Log.INFO))
+                Log.i(TAG,
+                        "System-wide desirability for auto sync has changed; "
+                            + (autoSyncEnabled ? "registering"
+                                    : "unregistering")
+                            + " application with C2DM servers.");
 
             if (autoSyncEnabled == true)
                 C2DMessaging.register(context, Config.C2DM_SENDER);
@@ -251,7 +254,8 @@ final class Syncer {
      *            The message to display
      */
     private void logOrDisplayErrorMessage(final String message) {
-        Log.e(TAG, message);
+        if (Log.isLoggable(TAG, Log.ERROR))
+            Log.e(TAG, message);
 
         // Note: in general, showing any form of UI from a service is bad.
         if (this.parameters.getManualSync()) {
@@ -284,9 +288,11 @@ final class Syncer {
                             C2DMessaging.getRegistrationId(Syncer.this.context));
             if (c2dmToken.isValid())
                 requestBuilder.addRegisterDevice(this.requestMaker
-                        .makeRegisterDeviceData(c2dmToken, preferences.getDeviceName()));
+                        .makeRegisterDeviceData(c2dmToken,
+                                this.preferences.getDeviceName()));
             else {
-                Log.i(TAG, "Failed registring with C2DM");
+                if (Log.isLoggable(TAG, Log.INFO))
+                    Log.i(TAG, "Failed registring with C2DM");
                 syncResult.stats.numIoExceptions++;
                 return;
             }
@@ -305,8 +311,9 @@ final class Syncer {
             resp = this.transceiver.exchangeWithServer(requestBuilder.build());
         }
         catch (final OperationCanceledException e) {
-            Log.d(TAG, "Sync for account " + this.account.name
-                + " manually canceled.");
+            if (Log.isLoggable(TAG, Log.DEBUG))
+                Log.d(TAG, "Sync for account " + this.account.name
+                    + " manually canceled.", e);
             return;
         }
         catch (final AuthenticatorException e) {
@@ -317,8 +324,9 @@ final class Syncer {
 
         }
         catch (final IOException e) {
-            Log.d(TAG, "Sync for account " + this.account.name
-                + " failed due to an IO exception : " + e);
+            if (Log.isLoggable(TAG, Log.DEBUG))
+                Log.d(TAG, "Sync for account " + this.account.name
+                    + " failed due to an IO exception : ", e);
             syncResult.stats.numIoExceptions++;
             return;
         }
@@ -327,6 +335,8 @@ final class Syncer {
         if (c2dmToken != null)
             setLastSentC2dmToken(c2dmToken);
         setLastSyncTimeToNow();
+        if (Log.isLoggable(TAG, Log.INFO))
+            Log.i(TAG, "Synced: " + this.account.name);
     }
 
     /**

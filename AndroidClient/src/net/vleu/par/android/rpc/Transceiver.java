@@ -218,10 +218,10 @@ public final class Transceiver {
     private final SharedPreferences sharedPreferences;
 
     public Transceiver(final Account account, final Context context) {
+        final String sharedPrefsName = SHARED_PREFERENCES_PREFIX + account.name;
         this.account = account;
         this.context = context;
         this.httpClient = new DefaultHttpClient();
-        final String sharedPrefsName = SHARED_PREFERENCES_PREFIX + account.name;
         this.sharedPreferences =
                 context.getSharedPreferences(sharedPrefsName,
                         Context.MODE_PRIVATE);
@@ -253,8 +253,9 @@ public final class Transceiver {
         final String authTokenStr =
                 am.blockingGetAuthToken(this.account, APPENGINE_TOKEN_TYPE,
                         true);
-        Log.d(TAG, "Got a new GoogleAuthToken for account: "
-            + this.account.name + ": " + authTokenStr);
+        if (Log.isLoggable(TAG, Log.INFO))
+            Log.i(TAG, "Got a new GoogleAuthToken for account: "
+                + this.account.name + ": " + authTokenStr);
         if (authTokenStr == null)
             throw new AuthenticatorException("Could not get an auth token");
         else
@@ -292,17 +293,18 @@ public final class Transceiver {
             OperationCanceledException, AuthenticatorException {
         final int maxRetries = 10;
         for (int retry = 0; retry < maxRetries; retry++) {
-            /* Gets Google Auth Token and promotes it to an SACSID Token */
             if (!hasSacsidToken()) {
+                /* Gets a Google Auth Token and promotes it to a SACSID Token */
                 final GoogleAuthToken googleAuthToken =
                         blockingGetNewAuthToken();
                 try {
                     promoteToken(googleAuthToken);
                 }
                 catch (final InvalidGoogleAuthTokenException e) {
-                    Log.w(TAG,
-                            "The google auth token is invalid. Refreshing all cookies. "
-                                + e.toString());
+                    if (Log.isLoggable(TAG, Log.WARN))
+                        Log.w(TAG,
+                                "The google auth token is invalid. Refreshing all cookies. ",
+                                e);
                     invalidatesGoogleAuthToken(googleAuthToken);
                     clearSacsidToken();
                     continue;
@@ -314,14 +316,16 @@ public final class Transceiver {
             }
             catch (final AuthenticationTokenExpired e) {
                 clearSacsidToken();
-                Log.w(TAG, "Google and/or SACSID tokens expired. Retried "
-                    + retry + " times.");
+                if (Log.isLoggable(TAG, Log.WARN))
+                    Log.w(TAG, "Google and/or SACSID tokens expired. Retried "
+                        + retry + " times.", e);
                 continue;
             }
         }
         final String failureMessage =
                 "Failed to get valid Google and SACSID tokens !";
-        Log.e(TAG, failureMessage);
+        if (Log.isLoggable(TAG, Log.ERROR))
+            Log.e(TAG, failureMessage);
         throw new AuthenticatorException(failureMessage);
     }
 
@@ -346,7 +350,8 @@ public final class Transceiver {
     private void invalidatesGoogleAuthToken(final GoogleAuthToken token) {
         if (token != null) {
             final AccountManager am = AccountManager.get(this.context);
-            Log.d(TAG, "Invalidating GoogleAuthToken : " + token.value);
+            if (Log.isLoggable(TAG, Log.DEBUG))
+                Log.d(TAG, "Invalidating GoogleAuthToken : " + token.value);
             am.invalidateAuthToken(APPENGINE_TOKEN_TYPE, token.value);
         }
     }

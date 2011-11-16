@@ -40,7 +40,8 @@ public class C2DMReceiver extends C2DMBaseReceiver {
     @Override
     public void onError(final Context context, final String errorId) {
         String message = "Messaging registration error: " + errorId;
-        Log.w(TAG, message);
+        if (Log.isLoggable(TAG, Log.WARN))
+            Log.w(TAG, message);
         Toast.makeText(context, message,
                 Toast.LENGTH_LONG).show();
     }

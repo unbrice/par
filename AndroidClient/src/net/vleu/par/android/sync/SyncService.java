@@ -27,8 +27,8 @@ import android.os.IBinder;
 import android.util.Log;
 
 /**
- * Android Service that handles sync. It simply instantiates a SyncAdapter and returns
- * its IBinder.
+ * Android Service that handles sync. It simply instantiates a SyncAdapter and
+ * returns its IBinder.
  */
 @ThreadSafe
 public class SyncService extends Service {
@@ -45,7 +45,8 @@ public class SyncService extends Service {
         SyncAdapter result;
         synchronized (SyncService.class) {
             if (cachedSyncAdapter == null) {
-                Log.d(TAG, "Instanciating a new SyncAdapter");
+                if (Log.isLoggable(TAG, Log.DEBUG))
+                    Log.d(TAG, "Instanciating a new SyncAdapter");
                 result = new SyncAdapter(getApplicationContext());
                 cachedSyncAdapter = new SoftReference<SyncAdapter>(result);
                 return result;
