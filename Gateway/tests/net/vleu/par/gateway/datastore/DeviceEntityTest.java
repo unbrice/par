@@ -19,9 +19,9 @@ package net.vleu.par.gateway.datastore;
 import static org.junit.Assert.assertEquals;
 import net.vleu.par.C2dmToken;
 import net.vleu.par.DeviceName;
-import net.vleu.par.gateway.models.UserIdTest;
 import net.vleu.par.models.Device;
 import net.vleu.par.models.DeviceId;
+import net.vleu.par.models.UserIdTest;
 
 import org.junit.After;
 import org.junit.Before;

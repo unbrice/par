@@ -37,7 +37,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import net.vleu.par.C2dmToken;
 import net.vleu.par.gateway.datastore.DeviceEntityTest;
-import net.vleu.par.gateway.models.UserIdTest;
+import net.vleu.par.models.UserIdTest;
 import net.vleu.par.protocolbuffer.Devices.DeviceIdData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.RegisterDeviceData;

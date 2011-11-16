@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package net.vleu.par.gateway.models;
+package net.vleu.par.models;
 
 import net.vleu.par.models.UserId;
 

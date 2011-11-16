@@ -24,8 +24,8 @@ import java.util.ArrayList;
 import net.vleu.par.gateway.datastore.DeviceEntityTest;
 import net.vleu.par.gateway.datastore.DirectiveEntityTest;
 import net.vleu.par.gateway.datastore.TooManyConcurrentAccesses;
-import net.vleu.par.gateway.models.UserIdTest;
 import net.vleu.par.models.Directive;
+import net.vleu.par.models.UserIdTest;
 
 import org.junit.After;
 import org.junit.Before;
