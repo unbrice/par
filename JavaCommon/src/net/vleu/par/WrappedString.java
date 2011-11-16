@@ -25,12 +25,15 @@ public abstract class WrappedString {
     public final String value;
 
     protected WrappedString(final String value) {
+        if (value == null)
+            throw new NullPointerException(
+                    "Trying to initialize a Wrapped String with a NULL pointer");
         this.value = value;
     }
 
     @Override
     public boolean equals(final Object other) {
-        if (other instanceof WrappedString)
+        if (this.getClass().isInstance(other))
             return ((WrappedString) other).value.equals(this.value);
         else
             return false;

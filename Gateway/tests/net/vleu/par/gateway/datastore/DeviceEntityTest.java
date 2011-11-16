@@ -18,6 +18,7 @@ package net.vleu.par.gateway.datastore;
 
 import static org.junit.Assert.assertEquals;
 import net.vleu.par.C2dmToken;
+import net.vleu.par.DeviceName;
 import net.vleu.par.gateway.models.Device;
 import net.vleu.par.gateway.models.DeviceId;
 import net.vleu.par.gateway.models.UserIdTest;
@@ -43,9 +44,11 @@ public class DeviceEntityTest {
 
     public static final DeviceId DUMMY_DEVICE_ID = DeviceId
             .fromBase64urlWithNoVerifications("CTJ5BgAAAAAA");
+    
+    public static DeviceName DUMMY_DEVICE_NAME = new DeviceName("dummyDevice");
 
     private static Device buildDummyDevice() {
-        return new Device(DUMMY_DEVICE_ID, C2DM_TOKEN);
+        return new Device(DUMMY_DEVICE_ID, DUMMY_DEVICE_NAME, C2DM_TOKEN);
     }
 
     public static Entity buildDummyDeviceEntity() {

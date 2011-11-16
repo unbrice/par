@@ -17,6 +17,7 @@
 package net.vleu.par.android.rpc;
 
 import net.vleu.par.C2dmToken;
+import net.vleu.par.DeviceName;
 import net.vleu.par.protocolbuffer.Devices.DeviceIdData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.GetDeviceDirectivesData;
@@ -51,14 +52,18 @@ public final class RequestMaker {
      * Creates protocol buffers representing this request, as described in the
      * .proto file
      * 
-     * @param The
-     *            latest available C2DM token
+     * @param deviceName
+     *            The deviceName, cannot null
+     * @param c2dmToken
+     *            The latest available C2DM token, can be null to disable C2DM
      * @return A {@link RegisterDeviceData} filled to be sent to the server
      */
-    public RegisterDeviceData makeRegisterDeviceData(final C2dmToken c2dmToken) {
+    public RegisterDeviceData makeRegisterDeviceData(final C2dmToken c2dmToken,
+            final DeviceName deviceName) {
         final GatewayRequestData.RegisterDeviceData.Builder builder =
                 GatewayRequestData.RegisterDeviceData.newBuilder();
         builder.setDeviceId(this.identifier);
+        builder.setFriendlyName(deviceName.value);
         if (c2dmToken.value != null && c2dmToken.value.length() > 0)
             builder.setC2DmRegistrationId(c2dmToken.value);
         return builder.build();

@@ -1,5 +1,6 @@
 package net.vleu.par.android.ui;
 
+import net.vleu.par.DeviceName;
 import net.vleu.par.android.R;
 import net.vleu.par.android.preferences.Preferences;
 import net.vleu.par.android.rpc.Transceiver;
@@ -71,7 +72,7 @@ public class PARAndroidClientActivity extends Activity {
         if (isEqualOrNull(key, Preferences.KEY_DEVICE_NAME)) {
             final EditText input =
                     (EditText) findViewById(R.id.main_set_device_name_edittext);
-            input.setText(this.prefs.getDeviceName());
+            input.setText(this.prefs.getDeviceName().value);
         }
     }
 
@@ -82,7 +83,9 @@ public class PARAndroidClientActivity extends Activity {
                     public void onClick(final View ignored) {
                         final EditText input =
                                 (EditText) findViewById(R.id.main_set_device_name_edittext);
-                        final String deviceName = input.getText().toString();
+                        // TODO: Validate this name
+                        final DeviceName deviceName =
+                                new DeviceName(input.getText().toString());
                         PARAndroidClientActivity.this.prefs
                                 .setDeviceName(deviceName);
                         Transceiver.askUserForPermissionsIfNecessary(

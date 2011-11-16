@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
+import net.vleu.par.DeviceName;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
@@ -93,8 +94,10 @@ public final class Preferences {
                 .registerOnSharedPreferenceChangeListener(this.sharedPreferencesListener);
     }
 
-    public String getDeviceName() {
-        return this.privatePrefs.getString(KEY_DEVICE_NAME, Build.MODEL);
+    public DeviceName getDeviceName() {
+        final String nameString =
+                this.privatePrefs.getString(KEY_DEVICE_NAME, Build.MODEL);
+        return new DeviceName(nameString);
     }
 
     /**
@@ -110,8 +113,10 @@ public final class Preferences {
         }
     }
 
-    public void setDeviceName(final String newName) {
-        this.privatePrefs.edit().putString(KEY_DEVICE_NAME, newName).commit();
+    public void setDeviceName(final DeviceName newName) {
+        final String nameString = newName.value;
+        this.privatePrefs.edit().putString(KEY_DEVICE_NAME, nameString)
+                .commit();
     }
 
     /**

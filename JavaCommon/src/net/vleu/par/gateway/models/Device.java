@@ -17,28 +17,36 @@
 package net.vleu.par.gateway.models;
 
 import net.vleu.par.C2dmToken;
+import net.vleu.par.DeviceName;
 
 public final class Device {
     /** Access token for using C2DM with this device */
     private C2dmToken c2dmRegistrationId;
     private final DeviceId id;
+    private final DeviceName userFriendlyName;
 
     /**
      * @param id
      *            Cannot be null
+     * @param userFriendlyName
+     *            Cannot be null
      */
-    public Device(final DeviceId id) {
-        this(id, null);
+    public Device(final DeviceId id, final DeviceName userFriendlyName) {
+        this(id, userFriendlyName, null);
     }
 
     /**
      * @param id
      *            Cannot be null
+     * @param userFriendlyName
+     *            Cannot be null
      * @param c2dmRegistrationId
-     *            Null if the device is not registered
+     *            Null if the device is not registered with C2DM
      */
-    public Device(final DeviceId id, final C2dmToken c2dmRegistrationId) {
+    public Device(final DeviceId id, final DeviceName userFriendlyName,
+            final C2dmToken c2dmRegistrationId) {
         this.id = id;
+        this.userFriendlyName = userFriendlyName;
         this.c2dmRegistrationId = c2dmRegistrationId;
     }
 
@@ -50,7 +58,8 @@ public final class Device {
             final Device otherAsDevice = (Device) other;
             return this.id.equals(otherAsDevice.id)
                 && this.c2dmRegistrationId
-                        .equals(otherAsDevice.c2dmRegistrationId);
+                        .equals(otherAsDevice.c2dmRegistrationId)
+                && this.userFriendlyName.equals(otherAsDevice.userFriendlyName);
         }
     }
 
@@ -64,6 +73,10 @@ public final class Device {
 
     public DeviceId getId() {
         return this.id;
+    }
+
+    public DeviceName getUserFriendlyName() {
+        return this.userFriendlyName;
     }
 
     public boolean hasC2dmRegistrationId() {

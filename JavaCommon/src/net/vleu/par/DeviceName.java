@@ -17,18 +17,11 @@
 package net.vleu.par;
 
 /**
- * Typesafe wrapper for the strings that Android's C2DM uses to identify
- * devices.
+ * Typesafe wrapper for the names that users choose for their device
  */
-public final class C2dmToken extends WrappedString {
-    public C2dmToken(final String value) {
-        super(value);
-    }
+public final class DeviceName extends WrappedString {
 
-    /**
-     * @return true if value.length() is greater than 0
-     */
-    public boolean isValid() {
-        return this.value.length() > 0;
+    public DeviceName(String value) {
+        super(value);
     }
 }

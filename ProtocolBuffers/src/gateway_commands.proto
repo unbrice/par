@@ -29,21 +29,22 @@ import "devices.proto";
 
 message GatewayRequestData {
 	message RegisterDeviceData {
-		required DeviceIdData deviceId = 1;
+		required DeviceIdData device_id = 1;
 		/* If absent, C2DM is disabled for this device */
 		optional string c2dm_registration_id = 2;
+		required string friendly_name = 3;
 	}
 	message QueueDirectiveData {
-		required DeviceIdData deviceId = 1;
+		required DeviceIdData device_id = 1;
 		required DirectiveData directive = 2;
 	}
 	message GetDeviceDirectivesData {
-		required DeviceIdData deviceId = 1;
+		required DeviceIdData device_id = 1;
 		// TODO: A version number from which to get data
 	}
-	repeated RegisterDeviceData registerDevice = 1;
-	repeated QueueDirectiveData queueDirective = 2;
-	repeated GetDeviceDirectivesData getDeviceDirectives = 3;
+	repeated RegisterDeviceData register_device = 1;
+	repeated QueueDirectiveData queue_directive = 2;
+	repeated GetDeviceDirectivesData get_device_directives = 3;
 }
 
 message GatewayResponseData {

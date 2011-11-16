@@ -18,6 +18,7 @@ package net.vleu.par.gateway;
 
 import net.jcip.annotations.ThreadSafe;
 import net.vleu.par.C2dmToken;
+import net.vleu.par.DeviceName;
 import net.vleu.par.gateway.datastore.DeviceEntity;
 import net.vleu.par.gateway.datastore.ThreadLocalDatastoreService;
 import net.vleu.par.gateway.models.Device;
@@ -54,11 +55,15 @@ public class DeviceRegistrar {
      *            The user who registered the device
      * @param deviceId
      *            The device to wake up.
+     * @param friendlyName
+     *            A user friendly name
      * @param c2dmRegistrationId
+     *            Can be null
      */
     public void registerDevice(final UserId ownerId, final DeviceId deviceId,
-            final C2dmToken c2dmRegistrationId) {
-        final Device device = new Device(deviceId, c2dmRegistrationId);
+            final DeviceName friendlyName, final C2dmToken c2dmRegistrationId) {
+        final Device device =
+                new Device(deviceId, friendlyName, c2dmRegistrationId);
         final Entity deviceEntity =
                 DeviceEntity.entityFromDevice(ownerId, device);
         this.datastores.get().put(null, deviceEntity);

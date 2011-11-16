@@ -28,6 +28,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import net.jcip.annotations.ThreadSafe;
 import net.vleu.par.C2dmToken;
+import net.vleu.par.DeviceName;
 import net.vleu.par.gateway.datastore.TooManyConcurrentAccesses;
 import net.vleu.par.gateway.models.DeviceId;
 import net.vleu.par.gateway.models.DeviceId.InvalidDeviceIdSerialisation;
@@ -115,10 +116,14 @@ public final class ApiServlet extends HttpServlet {
             final DeviceId deviceId =
                     parseOrThrowInvalidRequestPassedVerification(req
                             .getDeviceId());
-            final C2dmToken c2dmRegistrationId =
-                    new C2dmToken(req.getC2DmRegistrationId());
+            final C2dmToken c2dmRegistrationId;
+            final DeviceName friendlyName = new DeviceName(req.getFriendlyName());
+            if (req.hasC2DmRegistrationId())
+                c2dmRegistrationId = new C2dmToken(req.getC2DmRegistrationId());
+            else
+                c2dmRegistrationId = null;
             ApiServlet.this.deviceRegistrar.registerDevice(this.userId,
-                    deviceId, c2dmRegistrationId);
+                    deviceId, friendlyName, c2dmRegistrationId);
         }
     }
 

@@ -284,7 +284,7 @@ final class Syncer {
                             C2DMessaging.getRegistrationId(Syncer.this.context));
             if (c2dmToken.isValid())
                 requestBuilder.addRegisterDevice(this.requestMaker
-                        .makeRegisterDeviceData(c2dmToken));
+                        .makeRegisterDeviceData(c2dmToken, preferences.getDeviceName()));
             else {
                 Log.i(TAG, "Failed registring with C2DM");
                 syncResult.stats.numIoExceptions++;

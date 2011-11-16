@@ -90,7 +90,9 @@ public class ApiServletTest {
         final DeviceIdData deviceIdData =
                 DeviceEntityTest.DUMMY_DEVICE_ID.asProtocolBuffer();
         final RegisterDeviceData registerDeviceData =
-                RegisterDeviceData.newBuilder().setDeviceId(deviceIdData)
+                RegisterDeviceData
+                        .newBuilder()
+                        .setDeviceId(deviceIdData)
                         .setC2DmRegistrationId(DUMMY_C2DM_REGISTRATION_ID.value)
                         .build();
         final GatewayRequestData requestData =
@@ -180,7 +182,8 @@ public class ApiServletTest {
         tested.doPost(request, this.response);
         verify(this.response, never()).sendError(anyInt(), any(String.class));
         verify(this.deviceRegistrar).registerDevice(UserIdTest.DUMMY_USER_ID,
-                DeviceEntityTest.DUMMY_DEVICE_ID, DUMMY_C2DM_REGISTRATION_ID);
+                DeviceEntityTest.DUMMY_DEVICE_ID,
+                DeviceEntityTest.DUMMY_DEVICE_NAME, DUMMY_C2DM_REGISTRATION_ID);
         verifyZeroInteractions(this.deviceWaker);
         verifyZeroInteractions(this.directiveStore);
     }

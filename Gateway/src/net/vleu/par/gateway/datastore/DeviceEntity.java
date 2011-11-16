@@ -17,6 +17,7 @@
 package net.vleu.par.gateway.datastore;
 
 import net.vleu.par.C2dmToken;
+import net.vleu.par.DeviceName;
 import net.vleu.par.gateway.models.Device;
 import net.vleu.par.gateway.models.DeviceId;
 import net.vleu.par.gateway.models.UserId;
@@ -28,6 +29,7 @@ import com.google.appengine.api.datastore.Query;
 public final class DeviceEntity {
     /** Undefined if the device is not registered */
     static final String C2DM_REGISTRATION_ID_PROPERTY = "c2dmRegistrationId";
+    static final String FRIENDLY_NAME_PROPERTY = "friendlyName";
     static final String KIND = "Device";
 
     static Query buildQueryForOwnedDevices(final UserId ownerId) {
@@ -37,12 +39,20 @@ public final class DeviceEntity {
 
     public static Device deviceFromEntity(final Entity entity) {
         assert (entity.getKind() == KIND);
-        final C2dmToken c2dmRegistrationId = new C2dmToken(
-                (String) entity.getProperty(C2DM_REGISTRATION_ID_PROPERTY));
+        final String c2dmRegistrationIdStr =
+                (String) entity.getProperty(C2DM_REGISTRATION_ID_PROPERTY);
+        final C2dmToken c2dmRegistrationId;
+        final DeviceName friendlyName =
+                new DeviceName(
+                        (String) entity.getProperty(FRIENDLY_NAME_PROPERTY));
         final DeviceId id =
                 DeviceId.fromBase64urlWithNoVerifications(entity.getKey()
                         .getName());
-        return new Device(id, c2dmRegistrationId);
+        if (c2dmRegistrationIdStr != null)
+            c2dmRegistrationId = new C2dmToken(c2dmRegistrationIdStr);
+        else
+            c2dmRegistrationId = null;
+        return new Device(id, friendlyName, c2dmRegistrationId);
     }
 
     public static Entity entityFromDevice(final UserId ownerId,
