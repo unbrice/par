@@ -26,9 +26,9 @@ import java.io.IOException;
 
 import net.vleu.par.gateway.datastore.DeviceEntity;
 import net.vleu.par.gateway.datastore.DeviceEntityTest;
-import net.vleu.par.gateway.models.DeviceId;
-import net.vleu.par.gateway.models.UserId;
 import net.vleu.par.gateway.tests.ThreadGlobal;
+import net.vleu.par.models.DeviceId;
+import net.vleu.par.models.UserId;
 import net.vleu.par.utils.C2dmRequestFactory;
 
 import org.junit.After;

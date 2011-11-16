@@ -17,10 +17,10 @@
 package net.vleu.par.gateway.datastore;
 
 import static org.junit.Assert.assertEquals;
-import net.vleu.par.gateway.models.Directive;
 import net.vleu.par.gateway.models.UserIdTest;
-import net.vleu.par.gateway.models.Directive.InvalidDirectiveSerialisation;
-import net.vleu.par.gateway.models.UserId;
+import net.vleu.par.models.Directive;
+import net.vleu.par.models.UserId;
+import net.vleu.par.models.Directive.InvalidDirectiveSerialisation;
 import net.vleu.par.protocolbuffer.Commands.DirectiveData;
 import net.vleu.par.protocolbuffer.Commands.StatusBarNotificationData;
 

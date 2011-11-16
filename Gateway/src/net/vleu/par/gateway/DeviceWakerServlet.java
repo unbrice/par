@@ -24,9 +24,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import net.jcip.annotations.ThreadSafe;
-import net.vleu.par.gateway.models.DeviceId;
-import net.vleu.par.gateway.models.DeviceId.InvalidDeviceIdSerialisation;
-import net.vleu.par.gateway.models.UserId;
+import net.vleu.par.models.DeviceId;
+import net.vleu.par.models.UserId;
+import net.vleu.par.models.DeviceId.InvalidDeviceIdSerialisation;
 
 import com.google.appengine.api.datastore.EntityNotFoundException;
 

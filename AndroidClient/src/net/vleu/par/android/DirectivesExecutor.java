@@ -18,9 +18,9 @@ package net.vleu.par.android;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import net.vleu.par.gateway.models.Directive;
-import net.vleu.par.gateway.models.Directive.ThrowingVisitor;
-import net.vleu.par.gateway.models.Directive.Visitor;
+import net.vleu.par.models.Directive;
+import net.vleu.par.models.Directive.ThrowingVisitor;
+import net.vleu.par.models.Directive.Visitor;
 import net.vleu.par.protocolbuffer.Commands.DirectiveData;
 import net.vleu.par.protocolbuffer.Commands.HapticNotificationData;
 import net.vleu.par.protocolbuffer.Commands.StatusBarNotificationData;

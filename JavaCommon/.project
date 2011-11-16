@@ -3,6 +3,7 @@
 	<name>PARJavaCommon</name>
 	<comment></comment>
 	<projects>
+		<project>PARProtocolBuffers</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
@@ -23,7 +24,7 @@
 	</linkedResources>
 	<filteredResources>
 		<filter>
-			<id>1320761554556</id>
+			<id>1321446203742</id>
 			<name>protobuff</name>
 			<type>5</type>
 			<matcher>

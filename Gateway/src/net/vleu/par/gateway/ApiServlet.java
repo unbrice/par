@@ -30,11 +30,11 @@ import net.jcip.annotations.ThreadSafe;
 import net.vleu.par.C2dmToken;
 import net.vleu.par.DeviceName;
 import net.vleu.par.gateway.datastore.TooManyConcurrentAccesses;
-import net.vleu.par.gateway.models.DeviceId;
-import net.vleu.par.gateway.models.DeviceId.InvalidDeviceIdSerialisation;
-import net.vleu.par.gateway.models.Directive;
-import net.vleu.par.gateway.models.GatewayRequest;
-import net.vleu.par.gateway.models.UserId;
+import net.vleu.par.models.DeviceId;
+import net.vleu.par.models.Directive;
+import net.vleu.par.models.GatewayRequest;
+import net.vleu.par.models.UserId;
+import net.vleu.par.models.DeviceId.InvalidDeviceIdSerialisation;
 import net.vleu.par.protocolbuffer.Commands.DirectiveData;
 import net.vleu.par.protocolbuffer.Devices.DeviceIdData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData;
@@ -117,7 +117,8 @@ public final class ApiServlet extends HttpServlet {
                     parseOrThrowInvalidRequestPassedVerification(req
                             .getDeviceId());
             final C2dmToken c2dmRegistrationId;
-            final DeviceName friendlyName = new DeviceName(req.getFriendlyName());
+            final DeviceName friendlyName =
+                    new DeviceName(req.getFriendlyName());
             if (req.hasC2DmRegistrationId())
                 c2dmRegistrationId = new C2dmToken(req.getC2DmRegistrationId());
             else

@@ -21,9 +21,9 @@ import net.vleu.par.C2dmToken;
 import net.vleu.par.DeviceName;
 import net.vleu.par.gateway.datastore.DeviceEntity;
 import net.vleu.par.gateway.datastore.ThreadLocalDatastoreService;
-import net.vleu.par.gateway.models.Device;
-import net.vleu.par.gateway.models.DeviceId;
-import net.vleu.par.gateway.models.UserId;
+import net.vleu.par.models.Device;
+import net.vleu.par.models.DeviceId;
+import net.vleu.par.models.UserId;
 
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Entity;

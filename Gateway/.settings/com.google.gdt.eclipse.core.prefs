@@ -1,5 +1,5 @@
-#Wed Nov 16 11:33:38 CET 2011
+#Wed Nov 16 16:20:53 CET 2011
 eclipse.preferences.version=1
-jarsExcludedFromWebInfLib=/home/brice/bins/eclipse/plugins/com.google.appengine.eclipse.sdkbundle_1.5.5.r37v201110112027/appengine-java-sdk-1.5.5/lib/impl/appengine-api-stubs.jar|/home/brice/bins/eclipse/plugins/com.google.appengine.eclipse.sdkbundle_1.5.5.r37v201110112027/appengine-java-sdk-1.5.5/lib/testing/appengine-testing.jar|/home/brice/Projects/Info/android/par/Gateway/libs/mockito-all-1.9.0-rc1.jar
+jarsExcludedFromWebInfLib=/home/brice/Projects/Info/android/par/Gateway/libs/mockito-all-1.9.0-rc1.jar|/home/brice/bins/appengine-java-sdk-1.6.0/lib/impl/appengine-api-stubs.jar|/home/brice/bins/appengine-java-sdk-1.6.0/lib/testing/appengine-testing.jar
 warSrcDir=war
 warSrcDirIsOutput=true

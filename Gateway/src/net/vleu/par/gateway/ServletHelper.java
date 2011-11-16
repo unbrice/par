@@ -17,7 +17,7 @@
 package net.vleu.par.gateway;
 
 import net.jcip.annotations.ThreadSafe;
-import net.vleu.par.gateway.models.UserId;
+import net.vleu.par.models.UserId;
 
 import com.google.appengine.api.users.UserService;
 import com.google.appengine.api.users.UserServiceFactory;

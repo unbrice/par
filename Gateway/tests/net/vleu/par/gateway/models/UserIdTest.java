@@ -16,6 +16,8 @@
  */
 package net.vleu.par.gateway.models;
 
+import net.vleu.par.models.UserId;
+
 
 public class UserIdTest {
 

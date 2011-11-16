@@ -26,9 +26,9 @@ import net.jcip.annotations.ThreadSafe;
 import net.vleu.par.C2dmToken;
 import net.vleu.par.gateway.datastore.DeviceEntity;
 import net.vleu.par.gateway.datastore.ThreadLocalDatastoreService;
-import net.vleu.par.gateway.models.Device;
-import net.vleu.par.gateway.models.DeviceId;
-import net.vleu.par.gateway.models.UserId;
+import net.vleu.par.models.Device;
+import net.vleu.par.models.DeviceId;
+import net.vleu.par.models.UserId;
 import net.vleu.par.utils.C2dmRequestFactory;
 
 import com.google.appengine.api.datastore.DatastoreService;

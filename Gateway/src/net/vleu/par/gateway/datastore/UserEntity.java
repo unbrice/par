@@ -16,8 +16,8 @@
  */
 package net.vleu.par.gateway.datastore;
 
-import net.vleu.par.gateway.models.User;
-import net.vleu.par.gateway.models.UserId;
+import net.vleu.par.models.User;
+import net.vleu.par.models.UserId;
 
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.Key;

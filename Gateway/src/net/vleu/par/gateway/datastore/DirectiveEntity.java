@@ -16,10 +16,10 @@
  */
 package net.vleu.par.gateway.datastore;
 
-import net.vleu.par.gateway.models.DeviceId;
-import net.vleu.par.gateway.models.Directive;
-import net.vleu.par.gateway.models.Directive.InvalidDirectiveSerialisation;
-import net.vleu.par.gateway.models.UserId;
+import net.vleu.par.models.DeviceId;
+import net.vleu.par.models.Directive;
+import net.vleu.par.models.UserId;
+import net.vleu.par.models.Directive.InvalidDirectiveSerialisation;
 
 import com.google.appengine.api.datastore.Blob;
 import com.google.appengine.api.datastore.Entity;

@@ -3,6 +3,8 @@
 	<name>PARGateway</name>
 	<comment></comment>
 	<projects>
+		<project>PARJavaCommon</project>
+		<project>PARProtocolBuffers</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

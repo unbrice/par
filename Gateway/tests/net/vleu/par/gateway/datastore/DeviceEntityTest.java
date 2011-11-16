@@ -19,9 +19,9 @@ package net.vleu.par.gateway.datastore;
 import static org.junit.Assert.assertEquals;
 import net.vleu.par.C2dmToken;
 import net.vleu.par.DeviceName;
-import net.vleu.par.gateway.models.Device;
-import net.vleu.par.gateway.models.DeviceId;
 import net.vleu.par.gateway.models.UserIdTest;
+import net.vleu.par.models.Device;
+import net.vleu.par.models.DeviceId;
 
 import org.junit.After;
 import org.junit.Before;
@@ -86,7 +86,7 @@ public class DeviceEntityTest {
 
     /**
      * Test method for
-     * {@link net.vleu.par.gateway.datastore.DeviceEntity#entityFromDevice(net.vleu.par.gateway.models.UserId, net.vleu.par.gateway.models.Device)}
+     * {@link net.vleu.par.gateway.datastore.DeviceEntity#entityFromDevice(net.vleu.par.models.UserId, net.vleu.par.models.Device)}
      * .
      */
     @Test
@@ -118,7 +118,7 @@ public class DeviceEntityTest {
 
     /**
      * Test method for
-     * {@link net.vleu.par.gateway.datastore.DeviceEntity#keyForIds(net.vleu.par.gateway.models.UserId, net.vleu.par.gateway.models.DeviceId)}
+     * {@link net.vleu.par.gateway.datastore.DeviceEntity#keyForIds(net.vleu.par.models.UserId, net.vleu.par.models.DeviceId)}
      * .
      */
     @Test
