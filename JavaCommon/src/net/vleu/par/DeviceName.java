@@ -21,7 +21,19 @@ package net.vleu.par;
  */
 public final class DeviceName extends WrappedString {
 
-    public DeviceName(String value) {
-        super(value);
+    /**
+     * @param value
+     *            Will be trimed and become the wrapped string
+     */
+    public DeviceName(final String value) {
+        super(value.trim());
     }
+
+    /**
+     * @return true if the wrapped value's length is greater than 0
+     */
+    public boolean isValid() {
+        return this.value.length() > 0;
+    }
+
 }

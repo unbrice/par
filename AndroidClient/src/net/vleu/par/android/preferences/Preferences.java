@@ -114,9 +114,11 @@ public final class Preferences {
     }
 
     public void setDeviceName(final DeviceName newName) {
-        final String nameString = newName.value;
-        this.privatePrefs.edit().putString(KEY_DEVICE_NAME, nameString)
-                .commit();
+        if (newName.isValid()) {
+            final String nameString = newName.value;
+            this.privatePrefs.edit().putString(KEY_DEVICE_NAME, nameString)
+                    .commit();
+        }
     }
 
     /**
