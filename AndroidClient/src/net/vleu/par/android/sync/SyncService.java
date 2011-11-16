@@ -42,18 +42,18 @@ public class SyncService extends Service {
     private static final String TAG = Config.makeLogTag(SyncService.class);
 
     private SyncAdapter getOrInstantiateSyncAdapter() {
-        SyncAdapter result;
+        SyncAdapter result = null;
         synchronized (SyncService.class) {
-            if (cachedSyncAdapter == null) {
+            if (cachedSyncAdapter != null)
+                result = cachedSyncAdapter.get();
+            if (result == null) {
                 if (Log.isLoggable(TAG, Log.DEBUG))
                     Log.d(TAG, "Instanciating a new SyncAdapter");
                 result = new SyncAdapter(getApplicationContext());
                 cachedSyncAdapter = new SoftReference<SyncAdapter>(result);
-                return result;
             }
-            else
-                return cachedSyncAdapter.get();
         }
+        return result;
     }
 
     @Override
