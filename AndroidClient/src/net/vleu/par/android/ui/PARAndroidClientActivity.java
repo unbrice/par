@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 public class PARAndroidClientActivity extends Activity {
     private class SynchronizationRequester implements Runnable {
@@ -83,14 +84,26 @@ public class PARAndroidClientActivity extends Activity {
                     public void onClick(final View ignored) {
                         final EditText input =
                                 (EditText) findViewById(R.id.main_set_device_name_edittext);
-                        // TODO: Validate this name
                         final DeviceName deviceName =
                                 new DeviceName(input.getText().toString());
-                        PARAndroidClientActivity.this.prefs
-                                .setDeviceName(deviceName);
-                        Transceiver.askUserForPermissionsIfNecessary(
-                                PARAndroidClientActivity.this,
-                                new SynchronizationRequester());
+                        if (deviceName.isValid()) {
+                            PARAndroidClientActivity.this.prefs
+                                    .setDeviceName(deviceName);
+                            Transceiver.askUserForPermissionsIfNecessary(
+                                    PARAndroidClientActivity.this,
+                                    new SynchronizationRequester());
+                        }
+                        else {
+                            /* Displays a message and reloads the device name, ignoring changes */
+                            final String message =
+                                    PARAndroidClientActivity.this
+                                            .getResources()
+                                            .getString(
+                                                    R.string.main_invalid_device_name);
+                            Toast.makeText(PARAndroidClientActivity.this,
+                                    message, Toast.LENGTH_LONG).show();
+                            refreshFromPreferences(Preferences.KEY_DEVICE_NAME);
+                        }
                     }
                 });
     }

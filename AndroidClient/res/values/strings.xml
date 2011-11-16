@@ -23,7 +23,7 @@
     <string name="main_set_device_name_button_title">Set</string>
     <string name="main_set_device_name_title">Device\'s Name</string>
     <string name="main_other_preferences_instructions">To access the other preferences, hit \"Menu\".</string>
+    <string name="main_invalid_device_name">Invalid device name!</string>
     <string name="preferences_device_name_title">Device Name</string>
     <string name="preferences_device_name_message">This name helps you recognising the device</string>
-
 </resources>
