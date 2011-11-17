@@ -259,9 +259,7 @@ public final class Transceiver {
         if (authTokenStr == null)
             throw new AuthenticatorException("Could not get an auth token");
         else
-            // return new GoogleAuthToken(authTokenStr);
-            return new GoogleAuthToken(
-                    "DQAAAEQBAADgWo7arlxrkkC3rhu3BKsd3BWLkxYDBX88yjMw3hXzNPrXqoZK6-FrJzTyDpOc4qhnv0daT6QgFQr4DYPSEfVZnlMBFTE_jKyR0UJRC73tbGd7Alz8mrUcHi7ODAxuXB-C4g5iGEsUyNFGPw8P6KGcRQVNrdGiq4CNDogZ5fJDziFXZ0SUHmcCGIlF8Pj_L57mZ3fp9xbbxI4Gw2MgUYbVKvkd5cGnCz3fPME5ZD6ohcurNcZ8Tm-P59lNkV1mPFG6iNE8QAD6XoDZen2wHwjkwg0tdQRlgTGrQs3w5Vgwi1CpaIFIGAtN6Wiq_SDzLdq3EHfRXkFiplPzXczN-7LsWw-V2T0XNwsD5xUOFfYgCkmGDwsaEi8Ua8hsUntOTQ3tuAxYrAcyXaNeWMOZzOnhmaXbbqr_7iFgMgrgZygbqJf3Hm-OHrlcFYjRVuR54vM");
+            return new GoogleAuthToken(authTokenStr);
     }
 
     /**
@@ -352,7 +350,7 @@ public final class Transceiver {
             final AccountManager am = AccountManager.get(this.context);
             if (Log.isLoggable(TAG, Log.DEBUG))
                 Log.d(TAG, "Invalidating GoogleAuthToken : " + token.value);
-            am.invalidateAuthToken(APPENGINE_TOKEN_TYPE, token.value);
+            am.invalidateAuthToken(GOOGLE_ACCOUNT_TYPE, token.value);
         }
     }
 
