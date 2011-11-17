@@ -60,6 +60,8 @@ public final class DeviceEntity {
         final Key deviceKey = keyForIds(ownerId, device.getId());
         final Entity res =
                 new Entity(KIND, deviceKey.getName(), deviceKey.getParent());
+        res.setUnindexedProperty(FRIENDLY_NAME_PROPERTY,
+                device.getUserFriendlyName().value);
         if (device.hasC2dmRegistrationId())
             res.setUnindexedProperty(C2DM_REGISTRATION_ID_PROPERTY,
                     device.getC2dmRegistrationId().value);
