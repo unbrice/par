@@ -10,8 +10,11 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 public class PARAndroidClientActivity extends Activity {
     private class SynchronizationRequester implements Runnable {
@@ -39,7 +42,8 @@ public class PARAndroidClientActivity extends Activity {
         super.onCreate(savedInstanceState);
         this.prefs = new Preferences(PARAndroidClientActivity.this);
         setContentView(R.layout.main);
-        setupButtons();
+        setupEnableSwitchToggleButton();
+        setupSetDeviceNameButton();
     }
 
     @Override
@@ -75,9 +79,29 @@ public class PARAndroidClientActivity extends Activity {
                     (EditText) findViewById(R.id.main_set_device_name_edittext);
             input.setText(this.prefs.getDeviceName().value);
         }
+        if (isEqualOrNull(key, Preferences.KEY_SYNCHRONIZATION_ENABLED)) {
+            final ToggleButton toggle =
+                    (ToggleButton) findViewById(R.id.main_enable_switch_toggleButton);
+            toggle.setChecked(this.prefs.isSynchronizationEnabled());
+        }
     }
 
-    private void setupButtons() {
+    private void setupEnableSwitchToggleButton() {
+        ((ToggleButton) findViewById(R.id.main_enable_switch_toggleButton))
+                .setOnCheckedChangeListener(new OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(
+                            final CompoundButton buttonView,
+                            final boolean isChecked) {
+                        PARAndroidClientActivity.this.prefs
+                                .setSynchronizationEnabled(isChecked);
+                        SynchronizationControler
+                                .requestUploadOnlySynchronization(PARAndroidClientActivity.this);
+                    }
+                });
+    }
+
+    private void setupSetDeviceNameButton() {
         ((Button) findViewById(R.id.main_set_device_name_button))
                 .setOnClickListener(new OnClickListener() {
                     @Override
@@ -94,7 +118,10 @@ public class PARAndroidClientActivity extends Activity {
                                     new SynchronizationRequester());
                         }
                         else {
-                            /* Displays a message and reloads the device name, ignoring changes */
+                            /*
+                             * Displays a message and reloads the device name,
+                             * ignoring changes
+                             */
                             final String message =
                                     PARAndroidClientActivity.this
                                             .getResources()

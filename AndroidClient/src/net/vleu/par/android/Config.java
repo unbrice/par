@@ -16,6 +16,8 @@
 
 package net.vleu.par.android;
 
+import android.util.Log;
+
 
 /**
  * Configuration settings for the Android client.
@@ -33,6 +35,8 @@ public final class Config  {
     public static final String SERVER_BASE_URL = "https://" + SERVER_DOMAIN;
     public static final String SERVER_RPC_URL = SERVER_BASE_URL + "/api/0";
 
+    private static final String TAG = "vleu_PAR_config";
+    
     /**
      * Enabling this is will turn on sync UI icons that notify the user of pending and active sync
      * status. This is useful for debugging, but generally not recommended for real applications,
@@ -43,6 +47,7 @@ public final class Config  {
 
     public static String makeLogTag(Class<?> cls) {
         String tag = "vleu_PAR_" + cls.getSimpleName();
+        Log.d(TAG, "New log tag: " + tag);
         return (tag.length() > 23) ? tag.substring(0, 23) : tag;
     }
 }

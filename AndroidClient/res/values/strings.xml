@@ -21,6 +21,7 @@
     <string name="main_instructions_title">Instructions</string>
     <string name="main_instructions">INSTRUCTIONS: TODO</string>
     <string name="main_set_device_name_button_title">Set</string>
+    <string name="main_enable_switch_title">Synchronization</string>
     <string name="main_set_device_name_title">Device\'s Name</string>
     <string name="main_other_preferences_instructions">To access the other preferences, hit \"Menu\".</string>
     <string name="main_invalid_device_name">Invalid device name!</string>

@@ -17,10 +17,12 @@
 package net.vleu.par.android.sync;
 
 import net.vleu.par.android.Config;
+import net.vleu.par.android.preferences.Preferences;
 import net.vleu.par.android.rpc.Transceiver;
 import android.accounts.Account;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.preference.Preference;
 
 /**
  * This class should be used from outside the package (like by the UI) to
@@ -29,23 +31,9 @@ import android.content.Context;
 public final class SynchronizationControler {
 
     /**
-     * Enables synchronization for this service (but if Master synchronization
-     * is disabled, no data will be exchanged)
+     * All classes but {@link Preference} should call
+     * {@link Preferences#isSynchronizationEnabled()} instead
      * 
-     * @param context
-     *            Used to access the account manager, no reference will be kept.
-     */
-    public static void enableAutomaticSync(final Context context) {
-        for (final Account account : Transceiver.listGoogleAccounts(context))
-            if (account.type.equals(Config.GOOGLE_ACCOUNT_TYPE)) {
-                ContentResolver
-                        .setIsSyncable(account, Config.SYNC_AUTHORITY, 1);
-                ContentResolver.setSyncAutomatically(account,
-                        Config.SYNC_AUTHORITY, true);
-            }
-    }
-
-    /**
      * @param context
      *            Used to access the account manager, no reference will be kept.
      * @return True if Auto Sync is enabled in the account manager.
@@ -62,6 +50,24 @@ public final class SynchronizationControler {
         return false;
     }
 
+    /**
+     * Indicates to Android that the application is syncable for this account.
+     * 
+     * It is part of the initialization we have to perform when the
+     * SYNC_EXTRAS_INITIALIZE extra is present in the {@link Syncer}'s
+     * arguments, according to {@link ContentResolver#SYNC_EXTRAS_INITIALIZE}'s
+     * description.
+     * 
+     * @param context
+     *            Used to access the account manager, no reference will be kept.
+     * @param account
+     *            The account to initialize
+     */
+    public static void registerAsSyncable(final Context context,
+            final Account account) {
+        ContentResolver.setIsSyncable(account, Config.SYNC_AUTHORITY, 1);
+    }
+
     /** Triggers a synchronization if an account exists for this account */
     public static void
             requestBidirectionalSynchronization(final Context context) {
@@ -74,6 +80,7 @@ public final class SynchronizationControler {
         final Syncer.SynchronizationParameters bundle =
                 new Syncer.SynchronizationParameters();
         bundle.setManualSync(true);
+        bundle.setExpeditedSync(true);
         bundle.setUploadOnly(uploadOnly);
         for (final Account account : Transceiver.listGoogleAccounts(context))
             ContentResolver.requestSync(account, Config.SYNC_AUTHORITY,
@@ -83,6 +90,27 @@ public final class SynchronizationControler {
     /** Triggers a synchronization if an account exists for this account */
     public static void requestUploadOnlySynchronization(final Context context) {
         requestSynchronization(context, true);
+    }
+
+    /**
+     * Enables or disables synchronization for this service (but if Master
+     * synchronization is disabled, no data will be exchanged) All classes but
+     * {@link Preference} should call
+     * {@link Preferences#setSynchronizationEnabled(boolean)} instead
+     * 
+     * @param context
+     *            Used to access the account manager, no reference will be kept.
+     * @param enable
+     *            true to enable, false to disable
+     */
+    public static void setAutomaticSync(final Context context,
+            final boolean enable) {
+        for (final Account account : Transceiver.listGoogleAccounts(context))
+            if (account.type.equals(Config.GOOGLE_ACCOUNT_TYPE)) {
+                registerAsSyncable(context, account);
+                ContentResolver.setSyncAutomatically(account,
+                        Config.SYNC_AUTHORITY, enable);
+            }
     }
 
     private SynchronizationControler() {

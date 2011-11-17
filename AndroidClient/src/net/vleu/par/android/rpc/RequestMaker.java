@@ -58,13 +58,12 @@ public final class RequestMaker {
      *            The latest available C2DM token, can be null to disable C2DM
      * @return A {@link RegisterDeviceData} filled to be sent to the server
      */
-    public RegisterDeviceData makeRegisterDeviceData(final C2dmToken c2dmToken,
-            final DeviceName deviceName) {
+    public RegisterDeviceData makeRegisterDeviceData(final DeviceName deviceName, final C2dmToken c2dmToken) {
         final GatewayRequestData.RegisterDeviceData.Builder builder =
                 GatewayRequestData.RegisterDeviceData.newBuilder();
         builder.setDeviceId(this.identifier);
         builder.setFriendlyName(deviceName.value);
-        if (c2dmToken.value != null && c2dmToken.value.length() > 0)
+        if (c2dmToken != null && c2dmToken.isValid())
             builder.setC2DmRegistrationId(c2dmToken.value);
         return builder.build();
     }

@@ -14,8 +14,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-    
+
 package net.vleu.par.android;
+
+import java.io.IOException;
 
 import net.vleu.par.android.sync.SynchronizationControler;
 import android.content.Context;
@@ -39,15 +41,21 @@ public class C2DMReceiver extends C2DMBaseReceiver {
 
     @Override
     public void onError(final Context context, final String errorId) {
-        String message = "Messaging registration error: " + errorId;
+        final String message = "Messaging registration error: " + errorId;
         if (Log.isLoggable(TAG, Log.WARN))
             Log.w(TAG, message);
-        Toast.makeText(context, message,
-                Toast.LENGTH_LONG).show();
+        Toast.makeText(context, message, Toast.LENGTH_LONG).show();
     }
 
     @Override
-    protected void onMessage(final Context context, final Intent intent) {
+    public void onMessage(final Context context, final Intent intent) {
         SynchronizationControler.requestBidirectionalSynchronization(context);
+    }
+
+    @Override
+    public void
+            onRegistered(final Context context, final String registrationId)
+                    throws IOException {
+        SynchronizationControler.requestUploadOnlySynchronization(context);
     }
 }

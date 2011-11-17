@@ -64,6 +64,14 @@ final class Syncer {
         }
 
         /**
+         * @see ContentResolver.SYNC_EXTRAS_EXPEDITED
+         */
+        public boolean getExpeditedSync() {
+            return this.bundle.getBoolean(
+                    ContentResolver.SYNC_EXTRAS_EXPEDITED, false);
+        }
+
+        /**
          * @see ContentResolver.SYNC_EXTRAS_INITIALIZE
          */
         public boolean getInitialize() {
@@ -85,6 +93,14 @@ final class Syncer {
         public boolean getUploadOnly() {
             return this.bundle.getBoolean(ContentResolver.SYNC_EXTRAS_UPLOAD,
                     false);
+        }
+
+        /**
+         * @see ContentResolver.SYNC_EXTRAS_EXPEDITED
+         */
+        public void setExpeditedSync(final boolean value) {
+            this.bundle
+                    .putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, value);
         }
 
         /**
@@ -125,35 +141,6 @@ final class Syncer {
     private static final String METADATA_PREFERENCE_FILE = "SyncAdpterMetadata";
 
     private static final String TAG = Config.makeLogTag(Syncer.class);
-
-    /**
-     * Register or unregister based on phone sync settings. Called on each
-     * performSync by the SyncAdapter.
-     */
-    private static void refreshAppC2DMRegistrationState(final Context context) {
-        // Determine if there are any auto-syncable accounts. If there are, make
-        // sure we are
-        // registered with the C2DM servers. If not, unregister the application.
-        final boolean autoSyncEnabled =
-                SynchronizationControler.isAutoSyncDesired(context);
-
-        final boolean c2dmRegistered =
-                !C2DMessaging.getRegistrationId(context).equals("");
-
-        if (c2dmRegistered != autoSyncEnabled) {
-            if (Log.isLoggable(TAG, Log.INFO))
-                Log.i(TAG,
-                        "System-wide desirability for auto sync has changed; "
-                            + (autoSyncEnabled ? "registering"
-                                    : "unregistering")
-                            + " application with C2DM servers.");
-
-            if (autoSyncEnabled == true)
-                C2DMessaging.register(context, Config.C2DM_SENDER);
-            else
-                C2DMessaging.unregister(context);
-        }
-    }
 
     /**
      * @param account
@@ -274,29 +261,34 @@ final class Syncer {
     public void performSynchronization(final SyncResult syncResult) {
         final boolean newLocalData = localDataChangedSinceLastSync();
         final boolean uploadOnly = this.parameters.getUploadOnly();
-        C2dmToken c2dmToken = null;
+        final C2dmToken c2dmToken;
         final GatewayRequestData.Builder requestBuilder =
                 GatewayRequestData.newBuilder();
         final GatewayResponseData resp;
 
         refreshAppC2DMRegistrationState(this.context);
 
+        if (this.parameters.getInitialize())
+            SynchronizationControler.registerAsSyncable(this.context,
+                    this.account);
+
         if (newLocalData) {
             /* Tries adding the registration to the request */
-            c2dmToken =
-                    new C2dmToken(
-                            C2DMessaging.getRegistrationId(Syncer.this.context));
-            if (c2dmToken.isValid())
-                requestBuilder.addRegisterDevice(this.requestMaker
-                        .makeRegisterDeviceData(c2dmToken,
-                                this.preferences.getDeviceName()));
-            else {
+            final String c2dmTokenStr =
+                    C2DMessaging.getRegistrationId(Syncer.this.context);
+            if (c2dmTokenStr == null || c2dmTokenStr.length() == 0) {
                 if (Log.isLoggable(TAG, Log.INFO))
                     Log.i(TAG, "Failed registring with C2DM");
-                syncResult.stats.numIoExceptions++;
-                return;
+                c2dmToken = null;
             }
+            else
+                c2dmToken = new C2dmToken(c2dmTokenStr);
+            requestBuilder.addRegisterDevice(this.requestMaker
+                    .makeRegisterDeviceData(this.preferences.getDeviceName(),
+                            c2dmToken));
         }
+        else
+            c2dmToken = null;
 
         if (uploadOnly) {
             if (!newLocalData)
@@ -337,6 +329,35 @@ final class Syncer {
         setLastSyncTimeToNow();
         if (Log.isLoggable(TAG, Log.INFO))
             Log.i(TAG, "Synced: " + this.account.name);
+    }
+
+    /**
+     * Register or unregister based on phone sync settings. Called on each
+     * performSync by the SyncAdapter.
+     */
+    private void refreshAppC2DMRegistrationState(final Context context) {
+        // Determine if there are any auto-syncable accounts. If there are, make
+        // sure we are registered with the C2DM servers. If not, unregister the
+        // application.
+        final boolean autoSyncEnabled =
+                this.preferences.isSynchronizationEnabled();
+
+        final boolean c2dmRegistered =
+                !C2DMessaging.getRegistrationId(context).equals("");
+
+        if (c2dmRegistered != autoSyncEnabled) {
+            if (Log.isLoggable(TAG, Log.INFO))
+                Log.i(TAG,
+                        "System-wide desirability for auto sync has changed; "
+                            + (autoSyncEnabled ? "registering"
+                                    : "unregistering")
+                            + " application with C2DM servers.");
+
+            if (autoSyncEnabled)
+                C2DMessaging.register(context, Config.C2DM_SENDER);
+            else
+                C2DMessaging.unregister(context);
+        }
     }
 
     /**

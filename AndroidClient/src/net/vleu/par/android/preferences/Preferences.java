@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
 import net.vleu.par.DeviceName;
+import net.vleu.par.android.sync.SynchronizationControler;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
@@ -43,15 +44,20 @@ public final class Preferences {
     private final class SharedPreferencesChangeListener implements
             OnSharedPreferenceChangeListener {
 
+        public void callListeners(final String changedKey) {
+            synchronized (Preferences.this.listeners) {
+                for (final OnChangeListener listener : Preferences.this.listeners)
+                    listener.onPreferencesChanged(changedKey);
+            }
+        }
+
         @Override
-        public synchronized void onSharedPreferenceChanged(
+        public void onSharedPreferenceChanged(
                 final SharedPreferences sharedPreferences,
                 final String changedKey) {
             if (!changedKey.equals(KEY_LAST_UPDATE_TIMESTAMP_MS)) {
                 setLastUpdateTimeToNow();
-                for (final OnChangeListener listener : Preferences.this.listeners)
-                    listener.onPreferencesChanged(changedKey);
-
+                callListeners(changedKey);
             }
         }
 
@@ -61,8 +67,13 @@ public final class Preferences {
     public static final String KEY_DEVICE_NAME = "device_name";
     /** The key for the Unix timestamp of the last update */
     private static final String KEY_LAST_UPDATE_TIMESTAMP_MS = "last_update_ms";
+    /** The key for wether the user wants the data to be synchronized */
+    public static final String KEY_SYNCHRONIZATION_ENABLED =
+            "synchronization_enabled";
     /** The filename for the current version */
     private static final String PRIVATE_PREFERENCES_NAME = "version0";
+    private final Context context;
+
     /**
      * Added by {@link #registerOnChangeListener(OnChangeListener)}, removed by
      * {@link #unregisterAllOnchangeListeners()} and
@@ -84,7 +95,12 @@ public final class Preferences {
     /** Registered as a ChangeListener in {@link #privatePrefs} */
     private final SharedPreferencesChangeListener sharedPreferencesListener;
 
+    /**
+     * @param context
+     *            Will stay alive as long as the preferences are alive
+     */
     public Preferences(final Context context) {
+        this.context = context;
         this.privatePrefs =
                 context.getSharedPreferences(PRIVATE_PREFERENCES_NAME,
                         Context.MODE_PRIVATE);
@@ -105,6 +121,10 @@ public final class Preferences {
      */
     public long getLastUpdateTimeMs() {
         return this.privatePrefs.getLong(KEY_LAST_UPDATE_TIMESTAMP_MS, 0);
+    }
+
+    public boolean isSynchronizationEnabled() {
+        return SynchronizationControler.isAutoSyncDesired(this.context);
     }
 
     public void registerOnChangeListener(final OnChangeListener listener) {
@@ -130,6 +150,13 @@ public final class Preferences {
                 .edit()
                 .putLong(KEY_LAST_UPDATE_TIMESTAMP_MS,
                         System.currentTimeMillis()).commit();
+    }
+
+    public void setSynchronizationEnabled(final boolean value) {
+        SynchronizationControler.setAutomaticSync(this.context, value);
+        setLastUpdateTimeToNow();
+        this.sharedPreferencesListener
+                .callListeners(KEY_SYNCHRONIZATION_ENABLED);
     }
 
     public void unregisterAllOnchangeListeners() {
