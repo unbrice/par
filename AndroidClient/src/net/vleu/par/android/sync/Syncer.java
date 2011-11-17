@@ -261,7 +261,7 @@ final class Syncer {
     public void performSynchronization(final SyncResult syncResult) {
         final boolean newLocalData = localDataChangedSinceLastSync();
         final boolean uploadOnly = this.parameters.getUploadOnly();
-        final C2dmToken c2dmToken;
+        C2dmToken c2dmToken = null;
         final GatewayRequestData.Builder requestBuilder =
                 GatewayRequestData.newBuilder();
         final GatewayResponseData resp;
@@ -274,21 +274,19 @@ final class Syncer {
 
         if (newLocalData) {
             /* Tries adding the registration to the request */
-            final String c2dmTokenStr =
-                    C2DMessaging.getRegistrationId(Syncer.this.context);
-            if (c2dmTokenStr == null || c2dmTokenStr.length() == 0) {
+            c2dmToken =
+                    new C2dmToken(
+                            C2DMessaging.getRegistrationId(Syncer.this.context));
+            if (!c2dmToken.isValid()
+                || !this.preferences.isSynchronizationEnabled()) {
                 if (Log.isLoggable(TAG, Log.INFO))
-                    Log.i(TAG, "Failed registring with C2DM");
+                    Log.i(TAG, "Failed registering with C2DM");
                 c2dmToken = null;
             }
-            else
-                c2dmToken = new C2dmToken(c2dmTokenStr);
             requestBuilder.addRegisterDevice(this.requestMaker
                     .makeRegisterDeviceData(this.preferences.getDeviceName(),
                             c2dmToken));
         }
-        else
-            c2dmToken = null;
 
         if (uploadOnly) {
             if (!newLocalData)
