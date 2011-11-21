@@ -2,11 +2,13 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="tests"/>
+	<classpathentry kind="src" path="protostuff_schema"/>
 	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/PARJavaCommon"/>
-	<classpathentry exported="true" kind="lib" path="war/WEB-INF/lib/protobuf-2.4.0a.jar"/>
 	<classpathentry exported="true" kind="con" path="com.google.appengine.eclipse.core.GAE_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="libs/mockito-all-1.9.0-rc1.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/protostuff-api-1.0.4.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/protostuff-json-1.0.4.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="var" path="GOOGLE_APPENGINE_SDK_ROOT/lib/testing/appengine-testing.jar"/>
 	<classpathentry kind="var" path="GOOGLE_APPENGINE_SDK_ROOT/lib/impl/appengine-api-stubs.jar"/>

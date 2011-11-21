@@ -32,4 +32,11 @@
 		<nature>org.eclipse.jdt.core.javanature</nature>
 		<nature>com.google.appengine.eclipse.core.gaeNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>protostuff_schema</name>
+			<type>2</type>
+			<locationURI>PAR_HOME/ProtocolBuffers/src-gen/java_protoc_schema</locationURI>
+		</link>
+	</linkedResources>
 </projectDescription>

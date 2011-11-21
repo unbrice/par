@@ -31,7 +31,7 @@ message GatewayRequestData {
 	message RegisterDeviceData {
 		required DeviceIdData device_id = 1;
 		/* If absent, C2DM is disabled for this device */
-		optional string c2dm_registration_id = 2;
+		optional string C2DM_registration_id = 2;
 		required string friendly_name = 3;
 	}
 	message QueueDirectiveData {

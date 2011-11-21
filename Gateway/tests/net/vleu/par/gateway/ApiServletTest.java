@@ -93,7 +93,7 @@ public class ApiServletTest {
                 RegisterDeviceData
                         .newBuilder()
                         .setDeviceId(deviceIdData)
-                        .setC2DmRegistrationId(DUMMY_C2DM_REGISTRATION_ID.value)
+                        .setC2DMRegistrationId(DUMMY_C2DM_REGISTRATION_ID.value)
                         .build();
         final GatewayRequestData requestData =
                 GatewayRequestData.newBuilder()

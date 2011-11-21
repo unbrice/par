@@ -119,8 +119,8 @@ public final class ApiServlet extends HttpServlet {
             final C2dmToken c2dmRegistrationId;
             final DeviceName friendlyName =
                     new DeviceName(req.getFriendlyName());
-            if (req.hasC2DmRegistrationId())
-                c2dmRegistrationId = new C2dmToken(req.getC2DmRegistrationId());
+            if (req.hasC2DMRegistrationId())
+                c2dmRegistrationId = new C2dmToken(req.getC2DMRegistrationId());
             else
                 c2dmRegistrationId = null;
             ApiServlet.this.deviceRegistrar.registerDevice(this.userId,

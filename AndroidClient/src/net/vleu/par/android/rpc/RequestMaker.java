@@ -64,7 +64,7 @@ public final class RequestMaker {
         builder.setDeviceId(this.identifier);
         builder.setFriendlyName(deviceName.value);
         if (c2dmToken != null && c2dmToken.isValid())
-            builder.setC2DmRegistrationId(c2dmToken.value);
+            builder.setC2DMRegistrationId(c2dmToken.value);
         return builder.build();
     }
 }
