@@ -1,0 +1,6 @@
+#Mon Nov 21 01:06:12 CET 2011
+compiler.enableProjectSettings=true
+compiler.javaOutputDirectory=src-gen/java_google
+compiler.pythonOutputDirectory=src-gen/python_google
+eclipse.preferences.version=1
+general.enableProjectSettings=true

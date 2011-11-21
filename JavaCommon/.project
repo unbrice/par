@@ -19,7 +19,7 @@
 		<link>
 			<name>protobuff</name>
 			<type>2</type>
-			<locationURI>PAR_HOME/ProtocolBuffers/src-gen</locationURI>
+			<locationURI>PAR_HOME/ProtocolBuffers/src-gen/java_google</locationURI>
 		</link>
 	</linkedResources>
 	<filteredResources>
