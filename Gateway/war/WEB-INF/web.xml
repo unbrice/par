@@ -23,12 +23,13 @@ http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
 	</security-constraint>
 
 	<servlet>
-		<servlet-name>Api</servlet-name>
+		<servlet-name>Api0</servlet-name>
 		<servlet-class>net.vleu.par.gateway.ApiServlet</servlet-class>
 	</servlet>
 	<servlet-mapping>
-		<servlet-name>Api</servlet-name>
-		<url-pattern>/api/0</url-pattern>
+		<servlet-name>Api0</servlet-name>
+		<url-pattern>/api/0/json</url-pattern>
+		<url-pattern>/api/0/pb</url-pattern>
 	</servlet-mapping>
 	<security-constraint>
 		<web-resource-collection>

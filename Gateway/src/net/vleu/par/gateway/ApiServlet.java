@@ -22,19 +22,21 @@ import java.util.Arrays;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletInputStream;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import net.jcip.annotations.ThreadSafe;
 import net.vleu.par.C2dmToken;
+import net.vleu.par.Config;
 import net.vleu.par.DeviceName;
 import net.vleu.par.gateway.datastore.TooManyConcurrentAccesses;
 import net.vleu.par.models.DeviceId;
+import net.vleu.par.models.DeviceId.InvalidDeviceIdSerialisation;
 import net.vleu.par.models.Directive;
 import net.vleu.par.models.GatewayRequest;
 import net.vleu.par.models.UserId;
-import net.vleu.par.models.DeviceId.InvalidDeviceIdSerialisation;
 import net.vleu.par.protocolbuffer.Commands.DirectiveData;
 import net.vleu.par.protocolbuffer.Devices.DeviceIdData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData;
@@ -42,12 +44,18 @@ import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.GetDeviceD
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.QueueDirectiveData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.RegisterDeviceData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayResponseData;
+import net.vleu.par.protocolbuffer.SchemaGatewayCommands;
 
+import com.dyuproject.protostuff.JsonIOUtil;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 @ThreadSafe
 @SuppressWarnings("serial")
 public final class ApiServlet extends HttpServlet {
+    private static enum Encapsulation {
+        JSON, PROTOBUFF
+    }
+
     /**
      * Thrown when a request is discovered to be invalid after the point where
      * it should have been checked by
@@ -191,14 +199,15 @@ public final class ApiServlet extends HttpServlet {
         this.deviceRegistrar = deviceRegistrar;
         this.deviceWaker = deviceWaker;
         this.servletHelper = servletHelper;
-    }
-
+    };
+    
     /** @inherit */
     @Override
-    public void doPost(final HttpServletRequest req,
+    public void doPost(final HttpServletRequest httpReq,
             final HttpServletResponse httpResp) throws IOException {
         final UserId userId = this.servletHelper.getCurrentUser();
         final GatewayRequest request;
+        final Encapsulation encapsulationType;
 
         /* Checks that the user is authenticated */
         if (userId == null) {
@@ -208,12 +217,24 @@ public final class ApiServlet extends HttpServlet {
             return;
         }
 
+        /* Validates request type */
+        if (httpReq.getServletPath().endsWith(Config.SERVER_RPC_JSON_SUFFIX))
+            encapsulationType = Encapsulation.JSON;
+        else if (httpReq.getServletPath().endsWith(
+                Config.SERVER_RPC_PROTOBUFF_SUFFIX))
+            encapsulationType = Encapsulation.PROTOBUFF;
+        else {
+            final String msg = "Invalid URL suffix: '" + httpReq.getServletPath() + "'";
+            LOG.fine(msg);
+            httpResp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS, msg);
+            return;
+        }
+
         /* Checks that the request is well-formed */
         {
             final byte[] requestBytes;
-            GatewayRequestData requestPB;
             final ArrayList<String> errors = new ArrayList<String>(0);
-            requestBytes = readAllBytes(req.getInputStream());
+            requestBytes = readAllBytes(httpReq.getInputStream());
             if (requestBytes == null || requestBytes.length == 0) {
                 final String msg =
                         "Protocol buffer rejected for its size (empty or too big)";
@@ -221,12 +242,9 @@ public final class ApiServlet extends HttpServlet {
                 httpResp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS, msg);
                 return;
             }
-            try {
-                requestPB = GatewayRequestData.parseFrom(requestBytes);
-            }
-            catch (final InvalidProtocolBufferException e) {
-                requestPB = null;
-            }
+
+            final GatewayRequestData requestPB =
+                    parseRequest(requestBytes, errors, encapsulationType);
             if (!GatewayRequest.isValid(requestPB, errors)) {
                 LOG.fine("Requests rejected: " + joinStrings(errors, " --- \n"));
                 httpResp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS,
@@ -242,9 +260,7 @@ public final class ApiServlet extends HttpServlet {
             final GatewayResponseData responseProto;
             handleRequest(userId, request, responseBuilder);
             responseProto = responseBuilder.build();
-            httpResp.setContentType("application/octet-stream");
-            httpResp.setContentLength(responseProto.getSerializedSize());
-            responseProto.writeTo(httpResp.getOutputStream());
+            writeResponse(httpResp, encapsulationType, responseProto);
             httpResp.flushBuffer();
             httpResp.getOutputStream().close();
         }
@@ -271,6 +287,88 @@ public final class ApiServlet extends HttpServlet {
             final GatewayResponseData.Builder resp) throws Exception {
         final RequestHandler handler = new RequestHandler(resp, userId);
         req.accept(handler);
+    }
+
+    /**
+     * Parses the request from bytes to a protocol buffer. Must be thread-safe.
+     * 
+     * @param requestBytes
+     *            The byte array, never null or empty.
+     * @param errors
+     *            Strings describing the errors will be added to it
+     * @param encapsulation
+     * @see Encapsulation
+     * @return null if parsing failed, the parsed Protocol Buffer else
+     */
+    private GatewayRequestData parseRequest(final byte[] requestBytes,
+            final ArrayList<String> errors, final Encapsulation encapsulation) {
+        switch (encapsulation) {
+        case PROTOBUFF:
+            try {
+                return GatewayRequestData.parseFrom(requestBytes);
+            }
+            catch (final InvalidProtocolBufferException e) {
+                errors.add(e.getMessage());
+                return null;
+            }
+        case JSON:
+            final GatewayRequestData.Builder res =
+                    GatewayRequestData.newBuilder();
+            try {
+                JsonIOUtil.mergeFrom(requestBytes, 0, requestBytes.length, res,
+                        SchemaGatewayCommands.GatewayRequestData.MERGE,
+                        Config.SERVER_RPC_JSON_NUMERIC);
+            }
+            catch (final IOException e) {
+                errors.add("Invalid JSON: " + e.getMessage());
+                return null;
+            }
+            return res.build();
+        default:
+            throw new InternalError("Unknow encapsulation: " + encapsulation);
+        }
+    }
+
+    /**
+     * Serializes the {@link GatewayResponseData} onto the HttpServletResponse.
+     * Must be thread-safe.
+     * 
+     * This function is responsible for calling
+     * {@link HttpServletResponse#setContentType(String)}
+     * {@link HttpServletResponse#setContentLength(int)} and writing on
+     * {@link HttpServletResponse#getOutputStream()}
+     * 
+     * @param httpResp
+     *            Must not be null
+     * @param encapsulation
+     * @see Encapsulation
+     * @param responseProto
+     *            Must not be null
+     * @throws IOException
+     *             Failed in writing or serializing the response
+     */
+    private void writeResponse(final HttpServletResponse httpResp,
+            final Encapsulation encapsulation,
+            final GatewayResponseData responseProto) throws IOException {
+        final ServletOutputStream outputStream = httpResp.getOutputStream();
+        final byte[] respBytes;
+        switch (encapsulation) {
+        case PROTOBUFF:
+            httpResp.setContentType("application/octet-stream");
+            respBytes = responseProto.toByteArray();
+            break;
+        case JSON:
+            httpResp.setContentType("application/json");
+            respBytes =
+                    JsonIOUtil.toByteArray(responseProto,
+                            SchemaGatewayCommands.GatewayResponseData.WRITE,
+                            Config.SERVER_RPC_JSON_NUMERIC);
+            break;
+        default:
+            throw new InternalError("Unknow encapsulation: " + encapsulation);
+        }
+        httpResp.setContentLength(respBytes.length);
+        outputStream.write(respBytes);
     }
 
 }

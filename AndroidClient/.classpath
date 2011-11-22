@@ -6,5 +6,6 @@
 	<classpathentry kind="src" path="gen"/>
 	<classpathentry exported="true" kind="lib" path="libs/c2dm.jar" sourcepath="libs/c2dm-sources.jar"/>
 	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/PARJavaCommon"/>
+	<classpathentry kind="lib" path="/PARJavaCommon/libs/protobuf-2.4.0a.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

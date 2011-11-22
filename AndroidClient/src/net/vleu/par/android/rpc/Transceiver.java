@@ -368,7 +368,7 @@ public final class Transceiver {
      */
     private GatewayResponseData postData(final GatewayRequestData request)
             throws IOException, AuthenticationTokenExpired {
-        final HttpPost httpRequest = new HttpPost(Config.SERVER_RPC_URL);
+        final HttpPost httpRequest = new HttpPost(Config.SERVER_RPC_URL_PROTOBUFF);
         final ByteArrayEntity requestEntity =
                 new ByteArrayEntity(request.toByteArray());
         InputStream responseStream = null;
