@@ -19,6 +19,7 @@ package net.vleu.par.gateway;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletInputStream;
@@ -52,6 +53,38 @@ import com.google.protobuf.InvalidProtocolBufferException;
 @ThreadSafe
 @SuppressWarnings("serial")
 public final class ApiServlet extends HttpServlet {
+    /**
+     * This POJO describes the unfortunate outcome of a failed call to
+     * {@link #doPostOrReturnError()}
+     */
+    private static class DoPostError {
+        /** The HTTP code to send back to the user */
+        public final int httpCode;
+        public final Level logLevel;
+        /** Will be loged with the severity associated to logLevel */
+        public final String logMessage;
+        /** The HTTP message to send back to the user */
+        public final String userMessage;
+
+        public DoPostError(final Level logLevel, final int httpCode,
+                final Exception exception) {
+            this(logLevel, exception.toString(), httpCode, exception.toString());
+        }
+
+        public DoPostError(final Level logLevel, final int httpCode,
+                final String message) {
+            this(logLevel, message, httpCode, message);
+        }
+
+        public DoPostError(final Level logLevel, final String logMessage,
+                final int httpCode, final String userMessage) {
+            this.logLevel = logLevel;
+            this.logMessage = logMessage;
+            this.httpCode = httpCode;
+            this.userMessage = userMessage;
+        }
+    }
+
     private static enum Encapsulation {
         JSON, PROTOBUFF
     }
@@ -150,6 +183,27 @@ public final class ApiServlet extends HttpServlet {
         return stringBuilder.toString();
     }
 
+    /**
+     * Decides which encapsulation to use, according the URL
+     * 
+     * @param httpReq
+     *            The request
+     * @return One of {@link Encapsulation}
+     */
+    private static Encapsulation parseEncapsulation(
+            final HttpServletRequest httpReq) {
+
+        /* Validates request type */
+        if (httpReq.getServletPath().endsWith(Config.SERVER_RPC_JSON_SUFFIX))
+            return Encapsulation.JSON;
+        else if (httpReq.getServletPath().endsWith(
+                Config.SERVER_RPC_PROTOBUFF_SUFFIX))
+            return Encapsulation.PROTOBUFF;
+        else
+            return null;
+
+    }
+
     private static DeviceId parseOrThrowInvalidRequestPassedVerification(
             final DeviceIdData proto) throws InvalidRequestPassedVerification {
         try {
@@ -158,135 +212,6 @@ public final class ApiServlet extends HttpServlet {
         catch (final InvalidDeviceIdSerialisation e) {
             throw new InvalidRequestPassedVerification(e);
         }
-    }
-
-    private static byte[] readAllBytes(final ServletInputStream stream)
-            throws IOException {
-        final byte[] buffer = new byte[MAX_COMMAND_SIZE];
-        int position = 0;
-        int lastRet;
-        do {
-            lastRet =
-                    stream.read(buffer, position, MAX_COMMAND_SIZE - position);
-            if (lastRet > 0)
-                position += lastRet;
-        } while (lastRet > 0);
-        if (lastRet == 0) {
-            LOG.warning("Truncating a too large input");
-            return null;
-        }
-        return Arrays.copyOf(buffer, position);
-    }
-
-    private final DeviceRegistrar deviceRegistrar;
-
-    private final DeviceWaker deviceWaker;
-
-    private final DirectiveStore directiveStore;
-
-    private final ServletHelper servletHelper;
-
-    public ApiServlet() {
-        this(new DirectiveStore(), new DeviceRegistrar(), new DeviceWaker(),
-                new ServletHelper());
-    }
-
-    /** For dependency-injection during tests */
-    ApiServlet(final DirectiveStore directiveStore,
-            final DeviceRegistrar deviceRegistrar,
-            final DeviceWaker deviceWaker, final ServletHelper servletHelper) {
-        this.directiveStore = directiveStore;
-        this.deviceRegistrar = deviceRegistrar;
-        this.deviceWaker = deviceWaker;
-        this.servletHelper = servletHelper;
-    };
-    
-    /** @inherit */
-    @Override
-    public void doPost(final HttpServletRequest httpReq,
-            final HttpServletResponse httpResp) throws IOException {
-        final UserId userId = this.servletHelper.getCurrentUser();
-        final GatewayRequest request;
-        final Encapsulation encapsulationType;
-
-        /* Checks that the user is authenticated */
-        if (userId == null) {
-            httpResp.sendError(HttpCodes.HTTP_FORBIDDEN_STATUS,
-                    "Requests must be authenticated");
-            LOG.finer("Unauthenticated request");
-            return;
-        }
-
-        /* Validates request type */
-        if (httpReq.getServletPath().endsWith(Config.SERVER_RPC_JSON_SUFFIX))
-            encapsulationType = Encapsulation.JSON;
-        else if (httpReq.getServletPath().endsWith(
-                Config.SERVER_RPC_PROTOBUFF_SUFFIX))
-            encapsulationType = Encapsulation.PROTOBUFF;
-        else {
-            final String msg = "Invalid URL suffix: '" + httpReq.getServletPath() + "'";
-            LOG.fine(msg);
-            httpResp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS, msg);
-            return;
-        }
-
-        /* Checks that the request is well-formed */
-        {
-            final byte[] requestBytes;
-            final ArrayList<String> errors = new ArrayList<String>(0);
-            requestBytes = readAllBytes(httpReq.getInputStream());
-            if (requestBytes == null || requestBytes.length == 0) {
-                final String msg =
-                        "Protocol buffer rejected for its size (empty or too big)";
-                LOG.fine(msg);
-                httpResp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS, msg);
-                return;
-            }
-
-            final GatewayRequestData requestPB =
-                    parseRequest(requestBytes, errors, encapsulationType);
-            if (!GatewayRequest.isValid(requestPB, errors)) {
-                LOG.fine("Requests rejected: " + joinStrings(errors, " --- \n"));
-                httpResp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS,
-                        joinStrings(errors, "<br />\n"));
-                return;
-            }
-            request = new GatewayRequest(requestPB);
-        }
-
-        try {
-            final GatewayResponseData.Builder responseBuilder =
-                    GatewayResponseData.newBuilder();
-            final GatewayResponseData responseProto;
-            handleRequest(userId, request, responseBuilder);
-            responseProto = responseBuilder.build();
-            writeResponse(httpResp, encapsulationType, responseProto);
-            httpResp.flushBuffer();
-            httpResp.getOutputStream().close();
-        }
-        catch (final InvalidRequestPassedVerification e) {
-            httpResp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS, e.toString());
-            LOG.severe(e.toString());
-            return;
-        }
-        catch (final TooManyConcurrentAccesses e) {
-            httpResp.sendError(HttpCodes.HTTP_SERVICE_UNAVAILABLE_STATUS,
-                    e.toString());
-            LOG.severe(e.toString());
-            return;
-        }
-        catch (final Exception e) {
-            httpResp.sendError(HttpCodes.HTTP_INTERNAL_ERROR_STATUS,
-                    e.toString());
-            LOG.severe(e.toString());
-            return;
-        }
-    }
-
-    private void handleRequest(final UserId userId, final GatewayRequest req,
-            final GatewayResponseData.Builder resp) throws Exception {
-        final RequestHandler handler = new RequestHandler(resp, userId);
-        req.accept(handler);
     }
 
     /**
@@ -300,7 +225,7 @@ public final class ApiServlet extends HttpServlet {
      * @see Encapsulation
      * @return null if parsing failed, the parsed Protocol Buffer else
      */
-    private GatewayRequestData parseRequest(final byte[] requestBytes,
+    private static GatewayRequestData parseRequest(final byte[] requestBytes,
             final ArrayList<String> errors, final Encapsulation encapsulation) {
         switch (encapsulation) {
         case PROTOBUFF:
@@ -330,6 +255,36 @@ public final class ApiServlet extends HttpServlet {
     }
 
     /**
+     * Reads up to {@value #MAX_COMMAND_SIZE} bytes from the stream and returns
+     * them
+     * 
+     * @param stream
+     *            The stream to read from
+     * @return A byte array of up to {@value #MAX_COMMAND_SIZE} bytes, null if
+     *         it failed reading
+     * @throws IOException
+     *             If some I/O error occurs while reading the stream
+     * 
+     */
+    private static byte[] readAllBytes(final ServletInputStream stream)
+            throws IOException {
+        final byte[] buffer = new byte[MAX_COMMAND_SIZE];
+        int position = 0;
+        int lastRet;
+        do {
+            lastRet =
+                    stream.read(buffer, position, MAX_COMMAND_SIZE - position);
+            if (lastRet > 0)
+                position += lastRet;
+        } while (lastRet > 0);
+        if (lastRet == 0) {
+            LOG.warning("Truncating a too large input");
+            return null;
+        }
+        return Arrays.copyOf(buffer, position);
+    }
+
+    /**
      * Serializes the {@link GatewayResponseData} onto the HttpServletResponse.
      * Must be thread-safe.
      * 
@@ -347,7 +302,7 @@ public final class ApiServlet extends HttpServlet {
      * @throws IOException
      *             Failed in writing or serializing the response
      */
-    private void writeResponse(final HttpServletResponse httpResp,
+    private static void writeResponse(final HttpServletResponse httpResp,
             final Encapsulation encapsulation,
             final GatewayResponseData responseProto) throws IOException {
         final ServletOutputStream outputStream = httpResp.getOutputStream();
@@ -369,6 +324,190 @@ public final class ApiServlet extends HttpServlet {
         }
         httpResp.setContentLength(respBytes.length);
         outputStream.write(respBytes);
+    }
+
+    private final DeviceRegistrar deviceRegistrar;
+
+    private final DeviceWaker deviceWaker;;
+
+    private final DirectiveStore directiveStore;
+
+    private final ServletHelper servletHelper;
+
+    public ApiServlet() {
+        this(new DirectiveStore(), new DeviceRegistrar(), new DeviceWaker(),
+                new ServletHelper());
+    }
+
+    /** For dependency-injection during tests */
+    ApiServlet(final DirectiveStore directiveStore,
+            final DeviceRegistrar deviceRegistrar,
+            final DeviceWaker deviceWaker, final ServletHelper servletHelper) {
+        this.directiveStore = directiveStore;
+        this.deviceRegistrar = deviceRegistrar;
+        this.deviceWaker = deviceWaker;
+        this.servletHelper = servletHelper;
+    }
+
+    /**
+     * Reads the request, handles it and writes down the response or the error
+     * message. Depending on the URL suffix, the queries and responses are
+     * expected to be encapsulated in JSON or ProtolBuffers.
+     * 
+     * The implementation just calls
+     * {@link #doPostReturningErrors(HttpServletRequest, HttpServletResponse)}
+     * to accomplish its task then logs and sends back the possible errors.
+     * 
+     * @param httpReq
+     *            The request, must not be null
+     * @param httpResp
+     *            The response will be written on it, must not be null
+     * @throws IOException
+     *             Unrecoverable I/O error while sending the response
+     */
+    @Override
+    public void doPost(final HttpServletRequest httpReq,
+            final HttpServletResponse httpResp) throws IOException {
+        final DoPostError error = doPostReturningErrors(httpReq, httpResp);
+        if (error != null) {
+            LOG.log(error.logLevel, error.logMessage);
+            httpResp.sendError(error.httpCode, error.userMessage);
+        }
+    }
+
+    /**
+     * Parses the request, handles it and adds the response to the provided
+     * {@link GatewayResponseData.Builder}, or returns a {@link DoPostError}.
+     * 
+     * This method does no I/Os.
+     * 
+     * @param encapsulation
+     *            The {@link Encapsulation} to use for parsing the requestBytes
+     * @param userId
+     *            The {@link UserId} of the authenticated user who sent the
+     *            request
+     * @param requestBytes
+     *            The unparsed request as a byte array
+     * @param responseBuilder
+     *            The response will be merged to it
+     * @return null if everything went fine, else a {@link DoPostError}
+     */
+    private DoPostError doPostExceptIOs(final UserId userId,
+            final Encapsulation encapsulation, final byte[] requestBytes,
+            final GatewayResponseData.Builder responseBuilder) {
+
+        final GatewayRequest request;
+        final ArrayList<String> errors = new ArrayList<String>(0);
+
+        /* Checks that the request is well-formed */
+        {
+            final GatewayRequestData requestPB =
+                    parseRequest(requestBytes, errors, encapsulation);
+            if (!GatewayRequest.isValid(requestPB, errors)) {
+                final String logMsg =
+                        "Requests rejected: " + joinStrings(errors, " --- \n");
+                final String userMsg = joinStrings(errors, "<br />\n");
+                return new DoPostError(Level.FINE, logMsg,
+                        HttpCodes.HTTP_BAD_REQUEST_STATUS, userMsg);
+            }
+            request = new GatewayRequest(requestPB);
+        }
+
+        /* Handles the request */
+        try {
+            final RequestHandler handler =
+                    new RequestHandler(responseBuilder, userId);
+            request.accept(handler);
+        }
+        catch (final InvalidRequestPassedVerification e) {
+            return new DoPostError(Level.SEVERE,
+                    HttpCodes.HTTP_BAD_REQUEST_STATUS, e);
+        }
+        catch (final TooManyConcurrentAccesses e) {
+            return new DoPostError(Level.SEVERE,
+                    HttpCodes.HTTP_SERVICE_UNAVAILABLE_STATUS, e);
+
+        }
+        catch (final Exception e) {
+            return new DoPostError(Level.SEVERE,
+                    HttpCodes.HTTP_INTERNAL_ERROR_STATUS, e);
+        }
+
+        /* No errors ! */
+        return null;
+    }
+
+    /**
+     * Reads the request, handles it and writes down the response, or returns a
+     * {@link DoPostError}. Depending on the URL suffix, the queries and
+     * responses are expected to be encapsulated in JSON or ProtolBuffers.
+     * 
+     * The implementation just calls
+     * {@link #doPostReturningErrors(HttpServletRequest, HttpServletResponse)}
+     * to accomplish its task then logs and sends back the possible errors.
+     * 
+     * @param httpReq
+     *            The request, must not be null
+     * @param httpResp
+     *            The response will be written on it, must not be null
+     * @return null if everything went fine, else a {@link DoPostError}
+     * @throws IOException
+     *             Unrecoverable I/O error while sending the response This
+     *             functions does the same as
+     *             {@link #doPost(HttpServletRequest, HttpServletResponse)}
+     *             excepts that it returns an {@link DoPostError} when it fails
+     *             instead of handling the error itself.
+     */
+    private DoPostError doPostReturningErrors(final HttpServletRequest httpReq,
+            final HttpServletResponse httpResp) throws IOException {
+        /* Checks that the user is authenticated */
+        final UserId userId = this.servletHelper.getCurrentUser();
+        if (userId == null)
+            return new DoPostError(Level.FINER, "Unauthenticated request",
+                    HttpCodes.HTTP_FORBIDDEN_STATUS,
+                    "Requests must be authenticated");
+
+        /* Decide on encapsulation */
+        final Encapsulation encapsulation = parseEncapsulation(httpReq);
+        if (encapsulation == null)
+            return new DoPostError(Level.FINE,
+                    HttpCodes.HTTP_BAD_REQUEST_STATUS,
+                    "Cannnot guess the required encapsulation");
+
+        /* Reads the request */
+        final byte[] requestBytes;
+        try {
+            requestBytes = readAllBytes(httpReq.getInputStream());
+        }
+        catch (final IOException e) {
+            return new DoPostError(Level.FINE,
+                    HttpCodes.HTTP_BAD_REQUEST_STATUS, e);
+        }
+        if (requestBytes == null || requestBytes.length == 0)
+            return new DoPostError(Level.FINE,
+                    HttpCodes.HTTP_BAD_REQUEST_STATUS,
+                    "Protocol buffer rejected for its size (empty or too big)");
+
+        /* Builds the response and call #doPostExceptIOs */
+        final GatewayResponseData.Builder responseBuilder =
+                GatewayResponseData.newBuilder();
+        try {
+            final DoPostError error =
+                    doPostExceptIOs(userId, encapsulation, requestBytes,
+                            responseBuilder);
+            if (error != null)
+                return error;
+
+        }
+        catch (final Exception e) {
+            return new DoPostError(Level.SEVERE,
+                    HttpCodes.HTTP_INTERNAL_ERROR_STATUS, e);
+        }
+
+        writeResponse(httpResp, encapsulation, responseBuilder.build());
+        httpResp.flushBuffer();
+        httpResp.getOutputStream().close();
+        return null;
     }
 
 }
