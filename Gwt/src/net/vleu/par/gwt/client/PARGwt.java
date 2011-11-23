@@ -1,5 +1,8 @@
 package net.vleu.par.gwt.client;
 
+
+import net.vleu.par.protocolbuffer.DeviceIdData;
+
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
@@ -67,6 +70,14 @@ public class PARGwt implements EntryPoint {
         dialogVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_RIGHT);
         dialogVPanel.add(closeButton);
         dialogBox.setWidget(dialogVPanel);
+        
+        
+
+        final Label protoText = new Label();
+        final DeviceIdData proto = DeviceIdData.create();
+        proto.setAndroidId(42);
+        protoText.setText(proto.toString());
+        Window.alert(DeviceIdData.stringify(proto));
         
         // Add a handler to close the DialogBox
         closeButton.addClickHandler(new ClickHandler() {

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module rename-to='protostuff_overlay'>
+  <!-- Inherit the core Web Toolkit stuff.                        -->
+  <inherits name='com.google.gwt.user.User'/>
+
+  <!-- Setups the App Cache Linker to support offline use -->
+  <inherits name="net.vleu.par.gwt.linker.AppCacheLinker" />
+  <add-linker name="appcache" />
+
+  <!-- Specify the paths for translatable code                    -->
+  <source path='protocolbuffer'/>
+</module>
