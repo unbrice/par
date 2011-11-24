@@ -26,6 +26,24 @@ option optimize_for = SPEED;
 
 import "devices.proto";
 
+/*
+ * Used for acknowledgements and prevention of double deliveries.
+ * See "big_picture.txt" at the root of the project for a description
+ * of its usage
+ */
+message DirectiveIdData {
+	/*
+	 * An integer identifiying a particular instance of a software
+	 * that can create directives.
+	 */
+	required fixed64 creator_id = 1;
+	/*
+	 * An integer which is incremented each time a given instance
+	 * creates a new directive.
+	 */
+	required uint32 timestamp = 2;
+}
+
 message HapticNotificationData {
 	/* If absent, we will use the default sequence */
 	repeated uint32 vibration_sequence = 1 [packed=true];
@@ -39,8 +57,13 @@ message StatusBarNotificationData {
 }
 
 message DirectiveData {
-	optional uint64 expiration = 1;
-	optional string source = 32;
-	repeated HapticNotificationData haptic_notification = 33;
-	repeated StatusBarNotificationData statusbar_notification = 4;
+	/*
+	 * Used for acknowledgements and prevention of double deliveries.
+	 * See "big_picture.txt" at the root of the project for a description
+	 * of its usage
+	 * TODO : Implement acks and set this as required
+	 */
+	optional DirectiveIdData id = 1;
+	repeated HapticNotificationData haptic_notification = 16;
+	repeated StatusBarNotificationData statusbar_notification = 17;
 }

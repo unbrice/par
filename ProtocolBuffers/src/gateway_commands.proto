@@ -40,7 +40,13 @@ message GatewayRequestData {
 	}
 	message GetDeviceDirectivesData {
 		required DeviceIdData device_id = 1;
-		// TODO: A version number from which to get data
+		/*
+		 * Used for acknowledgements and prevention of double deliveries.
+		 * See "big_picture.txt" at the root of the project for a description
+		 * of its usage
+		 * TODO : Implement acks and use those
+		 */
+		repeated DirectiveIdData acknowledgements = 2;
 	}
 	repeated RegisterDeviceData register_device = 1;
 	repeated QueueDirectiveData queue_directive = 2;
@@ -49,5 +55,11 @@ message GatewayRequestData {
 
 message GatewayResponseData {
 	repeated DirectiveData directive = 1;
-	// TODO: A "version number" (unique timestamp)
+	/*
+	 * Used for acknowledgements and prevention of double deliveries.
+	 * See "big_picture.txt" at the root of the project for a description
+	 * of its usage
+	 * TODO : Implement acks and use those
+	 */
+	repeated fixed64 creator_ids_to_forget = 2;
 }

@@ -1,0 +1,47 @@
+# Copyright ©2011 Brice Arnould
+#
+# This document is distributed under the 
+# Creative Common Attribution-ShareAlike 3.0 Unported (CC BY-SA 3.0)
+# available at this address :
+#   http://creativecommons.org/licenses/by-sa/3.0/
+
+1/ The parts
+
+The Gateway (located in /Gateway/), is a server hosted on Google App
+Engine. It receives directives created by an interface (either the web
+interface in /Gwt/ or the command-line interface in /cli/) via HTTP.
+When the Gateway receives one message, it wakes the Android device
+that should handle it using Google's C2DM. When the device awakes, its
+software (located in /AndroidClient/) fetches the directive from the
+Gateway, and runs them.
+
+All messages are encoded using ProtocolBuffer, the corresponding
+definitions are in the eponym folder (/ProtocolBuffers/).
+
+/JavaCommon/ is a common set of functions used by the Gateway, the
+AndroidClient and the CLI (but not by the GWT interface at the time of
+writing).
+
+2/ Reliability (DirectiveIdData)
+
+The glue between that allows the different subproject to comunicate
+are the ProtocolBuffers and the acknowledgement scheme.
+
+When a user interface is first loaded on a machine, it generates an
+ID, which a 64bit number such that the likelihood of generating the
+same ID twice for a given user is minimised. It also initializes a
+message counter to 0.
+Every time a user interface sends a new Directive to the server, it
+increases its message counter. Should this counter overflow, the
+interface would regenerate a new ID.
+The pair of this interface ID and the timestamp forms a DirectiveId.
+
+The Gateway passes the DirectiveId to the AndroidClient as part of the
+directive.
+The AndroidClient keeps track of the latest timestamp for each
+client. When it requests new directives, it also sends the latest
+timestamp for all interfaces, thus acknowledging that it received and
+applied them, and that they can be deleted on the server.
+With the directives, the Gateway provides the AndroidClient with a
+list of client_ids that had no queued messages so that the client
+knows it can forget their timestamps.
