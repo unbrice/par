@@ -48,12 +48,19 @@ message GatewayRequestData {
 		 */
 		repeated DirectiveIdData acknowledgements = 2;
 	}
+	message EnumerateDevicesData {
+	}
 	repeated RegisterDeviceData register_device = 1;
 	repeated QueueDirectiveData queue_directive = 2;
 	repeated GetDeviceDirectivesData get_device_directives = 3;
 }
 
 message GatewayResponseData {
+	message DeviceDescriptionData {
+		required DeviceIdData device_id = 1;
+		required string friendly_name = 3;
+	}
+
 	repeated DirectiveData directive = 1;
 	/*
 	 * Used for acknowledgements and prevention of double deliveries.
@@ -62,4 +69,5 @@ message GatewayResponseData {
 	 * TODO : Implement acks and use those
 	 */
 	repeated fixed64 creator_ids_to_forget = 2;
+	repeated DeviceDescriptionData device_descriptions = 3;
 }
