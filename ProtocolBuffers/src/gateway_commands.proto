@@ -29,17 +29,17 @@ import "devices.proto";
 
 message GatewayRequestData {
 	message RegisterDeviceData {
-		required DeviceIdData device_id = 1;
+		required string device_id = 1;
 		/* If absent, C2DM is disabled for this device */
 		optional string C2DM_registration_id = 2;
 		required string friendly_name = 3;
 	}
 	message QueueDirectiveData {
-		required DeviceIdData device_id = 1;
+		required string device_id = 1;
 		required DirectiveData directive = 2;
 	}
 	message GetDeviceDirectivesData {
-		required DeviceIdData device_id = 1;
+		required string device_id = 1;
 		/*
 		 * Used for acknowledgements and prevention of double deliveries.
 		 * See "big_picture.txt" at the root of the project for a description
@@ -57,7 +57,7 @@ message GatewayRequestData {
 
 message GatewayResponseData {
 	message DeviceDescriptionData {
-		required DeviceIdData device_id = 1;
+		required string device_id = 1;
 		required string friendly_name = 3;
 	}
 

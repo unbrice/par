@@ -22,35 +22,20 @@ import java.util.Arrays;
 import net.vleu.par.protocolbuffer.Commands.DirectiveData;
 import net.vleu.par.protocolbuffer.Commands.HapticNotificationData;
 import net.vleu.par.protocolbuffer.Commands.StatusBarNotificationData;
-import net.vleu.par.protocolbuffer.Devices.DeviceIdData;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
 public final class Directive {
     @SuppressWarnings("serial")
     public static class InvalidDirectiveSerialisation extends Exception {
-        private final DeviceIdData invalidProto;
 
         private InvalidDirectiveSerialisation(final String message) {
             super(message);
-            this.invalidProto = null;
-        }
-
-        private InvalidDirectiveSerialisation(final String message,
-                final DeviceIdData invalidProto) {
-            super(message);
-            this.invalidProto = invalidProto;
         }
 
         private InvalidDirectiveSerialisation(final String message,
                 final Exception cause) {
             super(message, cause);
-            this.invalidProto = null;
-        }
-
-        /** @return The protocol buffer that triggered the exception, or null */
-        public DeviceIdData getInvalidProtocolBuffer() {
-            return this.invalidProto;
         }
     }
 

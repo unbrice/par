@@ -18,7 +18,7 @@ package net.vleu.par.android.rpc;
 
 import net.vleu.par.C2dmToken;
 import net.vleu.par.DeviceName;
-import net.vleu.par.protocolbuffer.Devices.DeviceIdData;
+import net.vleu.par.models.DeviceId;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.GetDeviceDirectivesData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.RegisterDeviceData;
@@ -29,7 +29,7 @@ import android.content.Context;
  * the GAE server
  */
 public final class RequestMaker {
-    private final DeviceIdData identifier;
+    private final DeviceId identifier;
 
     public RequestMaker(final Context context) {
         this.identifier = DeviceIdentifier.identifyCurrentDevice(context);
@@ -44,7 +44,7 @@ public final class RequestMaker {
     public GetDeviceDirectivesData makeGetDirectivesData() {
         final GatewayRequestData.GetDeviceDirectivesData.Builder builder =
                 GatewayRequestData.GetDeviceDirectivesData.newBuilder();
-        builder.setDeviceId(this.identifier);
+        builder.setDeviceId(this.identifier.value);
         return builder.build();
     }
 
@@ -61,7 +61,7 @@ public final class RequestMaker {
     public RegisterDeviceData makeRegisterDeviceData(final DeviceName deviceName, final C2dmToken c2dmToken) {
         final GatewayRequestData.RegisterDeviceData.Builder builder =
                 GatewayRequestData.RegisterDeviceData.newBuilder();
-        builder.setDeviceId(this.identifier);
+        builder.setDeviceId(this.identifier.value);
         builder.setFriendlyName(deviceName.value);
         if (c2dmToken != null && c2dmToken.isValid())
             builder.setC2DMRegistrationId(c2dmToken.value);

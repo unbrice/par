@@ -19,7 +19,6 @@ package net.vleu.par.models;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.vleu.par.protocolbuffer.Devices.DeviceIdData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.GetDeviceDirectivesData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.QueueDirectiveData;
@@ -59,8 +58,8 @@ public final class GatewayRequest {
             this.errors = errors;
         }
 
-        private void checkDeviceId(final DeviceIdData data) {
-            if (!DeviceId.isValidProtocolBuffer(data)) {
+        private void checkDeviceId(final String deviceIdStr) {
+            if (!DeviceId.isValidDeviceIdString(deviceIdStr)) {
                 this.errors.add("Invalid DeviceId");
                 this.allValid = false;
             }

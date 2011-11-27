@@ -36,9 +36,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import net.vleu.par.C2dmToken;
+import net.vleu.par.Config;
 import net.vleu.par.gateway.datastore.DeviceEntityTest;
 import net.vleu.par.models.UserIdTest;
-import net.vleu.par.protocolbuffer.Devices.DeviceIdData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.RegisterDeviceData;
 
@@ -87,12 +87,13 @@ public class ApiServletTest {
     private ServletHelper servletHelper;
 
     private GatewayRequestData buildDummyRequest() {
-        final DeviceIdData deviceIdData =
-                DeviceEntityTest.DUMMY_DEVICE_ID.asProtocolBuffer();
+        final String deviceIdStr = DeviceEntityTest.DUMMY_DEVICE_ID.value;
         final RegisterDeviceData registerDeviceData =
                 RegisterDeviceData
                         .newBuilder()
-                        .setDeviceId(deviceIdData)
+                        .setFriendlyName(
+                                DeviceEntityTest.DUMMY_DEVICE_NAME.value)
+                        .setDeviceId(deviceIdStr)
                         .setC2DMRegistrationId(DUMMY_C2DM_REGISTRATION_ID.value)
                         .build();
         final GatewayRequestData requestData =
@@ -111,7 +112,8 @@ public class ApiServletTest {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final ServletInputStream inputStream =
                 new DebugServletInputStream(body);
-
+        stub(request.getServletPath()).toReturn(
+                "http://localhost/" + Config.SERVER_RPC_PROTOBUFF_SUFFIX);
         stub(request.getInputStream()).toReturn(inputStream);
         return request;
     }
@@ -139,10 +141,11 @@ public class ApiServletTest {
     @Test
     public void testHugeInput() throws IOException {
         final ApiServlet tested = makeInjectedApiServlet();
-        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final byte[] tooMuchBytes = new byte[ApiServlet.MAX_COMMAND_SIZE * 2];
+        final HttpServletRequest request = makeStubedRequest(tooMuchBytes);
+        mock(HttpServletRequest.class);
         final DebugServletInputStream inputStream =
-                new DebugServletInputStream(
-                        new byte[ApiServlet.MAX_COMMAND_SIZE * 2]);
+                new DebugServletInputStream(tooMuchBytes);
         stub(this.servletHelper.getCurrentUser()).toReturn(
                 UserIdTest.DUMMY_USER_ID);
         stub(request.getInputStream()).toReturn(inputStream);

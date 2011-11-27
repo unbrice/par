@@ -26,7 +26,6 @@ import javax.servlet.http.HttpServletResponse;
 import net.jcip.annotations.ThreadSafe;
 import net.vleu.par.models.DeviceId;
 import net.vleu.par.models.UserId;
-import net.vleu.par.models.DeviceId.InvalidDeviceIdSerialisation;
 
 import com.google.appengine.api.datastore.EntityNotFoundException;
 
@@ -62,11 +61,11 @@ public class DeviceWakerServlet extends HttpServlet {
             final HttpServletResponse resp) throws IOException {
         final DeviceId deviceId;
         final UserId userId;
-        final String base64urlDeviceId = req.getParameter(DEVICE_ID_HTTP_PARAM);
+        final String deviceIdStr = req.getParameter(DEVICE_ID_HTTP_PARAM);
         final String stringUserId = req.getParameter(USER_ID_HTTP_PARAM);
 
         /* Validates the request */
-        if (base64urlDeviceId == null) {
+        if (deviceIdStr == null) {
             resp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS, "No "
                 + DEVICE_ID_HTTP_PARAM + " parameter");
             return;
@@ -83,10 +82,9 @@ public class DeviceWakerServlet extends HttpServlet {
         }
 
         /* Wakeups the device */
-        try {
-            deviceId = DeviceId.fromBase64url(base64urlDeviceId);
-        }
-        catch (final InvalidDeviceIdSerialisation e) {
+        if (DeviceId.isValidDeviceIdString(deviceIdStr))
+            deviceId = new DeviceId(deviceIdStr);
+        else {
             resp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS, "Invalid "
                 + DEVICE_ID_HTTP_PARAM);
             return;
@@ -97,7 +95,7 @@ public class DeviceWakerServlet extends HttpServlet {
         }
         catch (final EntityNotFoundException e) {
             resp.sendError(HttpCodes.HTTP_GONE_STATUS, "Unknown device: "
-                + base64urlDeviceId);
+                + deviceIdStr);
             return;
         }
         resp.setContentType("text/plain");

@@ -34,12 +34,10 @@ import net.vleu.par.Config;
 import net.vleu.par.DeviceName;
 import net.vleu.par.gateway.datastore.TooManyConcurrentAccesses;
 import net.vleu.par.models.DeviceId;
-import net.vleu.par.models.DeviceId.InvalidDeviceIdSerialisation;
 import net.vleu.par.models.Directive;
 import net.vleu.par.models.GatewayRequest;
 import net.vleu.par.models.UserId;
 import net.vleu.par.protocolbuffer.Commands.DirectiveData;
-import net.vleu.par.protocolbuffer.Devices.DeviceIdData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.GetDeviceDirectivesData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.QueueDirectiveData;
@@ -61,7 +59,7 @@ public final class ApiServlet extends HttpServlet {
         /** The HTTP code to send back to the user */
         public final int httpCode;
         public final Level logLevel;
-        /** Will be loged with the severity associated to logLevel */
+        /** Will be logged with the severity associated to logLevel */
         public final String logMessage;
         /** The HTTP message to send back to the user */
         public final String userMessage;
@@ -97,17 +95,10 @@ public final class ApiServlet extends HttpServlet {
     public static class InvalidRequestPassedVerification extends Exception {
 
         /**
-         * @see RuntimeException#RuntimeException(String message, Throwable
-         *      cause)
+         * @see Exception#Exception(String message)
          */
-        private InvalidRequestPassedVerification(final String message,
-                final Throwable cause) {
-            super(message, cause);
-        }
-
-        /** @see RuntimeException#RuntimeException(Throwable) */
-        private InvalidRequestPassedVerification(final Throwable cause) {
-            super(cause);
+        public InvalidRequestPassedVerification(final String string) {
+            super(string);
         }
     }
 
@@ -126,7 +117,7 @@ public final class ApiServlet extends HttpServlet {
                 throws InvalidRequestPassedVerification,
                 TooManyConcurrentAccesses {
             final DeviceId deviceId =
-                    parseOrThrowInvalidRequestPassedVerification(req
+                    checkOrThrowInvalidRequestPassedVerification(req
                             .getDeviceId());
             final ArrayList<Directive> directives =
                     ApiServlet.this.directiveStore.fetchAndDelete(this.userId,
@@ -143,7 +134,7 @@ public final class ApiServlet extends HttpServlet {
             final DirectiveData directiveData = req.getDirective();
             final Directive directive = new Directive(directiveData);
             final DeviceId deviceId =
-                    parseOrThrowInvalidRequestPassedVerification(req
+                    checkOrThrowInvalidRequestPassedVerification(req
                             .getDeviceId());
             ApiServlet.this.directiveStore.store(this.userId, deviceId,
                     directive);
@@ -155,7 +146,7 @@ public final class ApiServlet extends HttpServlet {
         public void visit(final RegisterDeviceData req)
                 throws InvalidRequestPassedVerification {
             final DeviceId deviceId =
-                    parseOrThrowInvalidRequestPassedVerification(req
+                    checkOrThrowInvalidRequestPassedVerification(req
                             .getDeviceId());
             final C2dmToken c2dmRegistrationId;
             final DeviceName friendlyName =
@@ -174,6 +165,15 @@ public final class ApiServlet extends HttpServlet {
 
     /** Maximal size in bytes for the serialized protocol buffers we accept */
     public static final int MAX_COMMAND_SIZE = 1024;
+
+    private static DeviceId checkOrThrowInvalidRequestPassedVerification(
+            final String deviceIdStr) throws InvalidRequestPassedVerification {
+        if (DeviceId.isValidDeviceIdString(deviceIdStr))
+            return new DeviceId(deviceIdStr);
+        else
+            throw new InvalidRequestPassedVerification("Invalid DeviceId: "
+                + deviceIdStr);
+    }
 
     private static String joinStrings(final ArrayList<String> strings,
             final String separator) {
@@ -202,16 +202,6 @@ public final class ApiServlet extends HttpServlet {
         else
             return null;
 
-    }
-
-    private static DeviceId parseOrThrowInvalidRequestPassedVerification(
-            final DeviceIdData proto) throws InvalidRequestPassedVerification {
-        try {
-            return DeviceId.fromProtocolBuffer(proto);
-        }
-        catch (final InvalidDeviceIdSerialisation e) {
-            throw new InvalidRequestPassedVerification(e);
-        }
     }
 
     /**
@@ -328,7 +318,7 @@ public final class ApiServlet extends HttpServlet {
 
     private final DeviceRegistrar deviceRegistrar;
 
-    private final DeviceWaker deviceWaker;;
+    private final DeviceWaker deviceWaker;
 
     private final DirectiveStore directiveStore;
 

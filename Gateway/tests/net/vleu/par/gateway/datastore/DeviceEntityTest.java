@@ -42,8 +42,7 @@ public class DeviceEntityTest {
 
     private static final C2dmToken C2DM_TOKEN = new C2dmToken("dummyC2DM");
 
-    public static final DeviceId DUMMY_DEVICE_ID = DeviceId
-            .fromBase64urlWithNoVerifications("CTJ5BgAAAAAA");
+    public static final DeviceId DUMMY_DEVICE_ID = new DeviceId("CTJ5BgAAAAAA");
     
     public static DeviceName DUMMY_DEVICE_NAME = new DeviceName("dummyDevice");
 
@@ -96,7 +95,7 @@ public class DeviceEntityTest {
                 DeviceEntity.entityFromDevice(UserIdTest.DUMMY_USER_ID, device);
         assertEquals(C2DM_TOKEN.value,
                 entity.getProperty(DeviceEntity.C2DM_REGISTRATION_ID_PROPERTY));
-        assertEquals(DUMMY_DEVICE_ID.toBase64url(), entity.getKey().getName());
+        assertEquals(DUMMY_DEVICE_ID.value, entity.getKey().getName());
         assertEquals(DeviceEntity.KIND, entity.getKind());
     }
 
@@ -126,7 +125,7 @@ public class DeviceEntityTest {
         final Key key =
                 DeviceEntity.keyForIds(UserIdTest.DUMMY_USER_ID,
                         DUMMY_DEVICE_ID);
-        assertEquals(DUMMY_DEVICE_ID.toBase64url(), key.getName());
+        assertEquals(DUMMY_DEVICE_ID.value, key.getName());
         assertEquals(UserIdTest.DUMMY_USER_ID.asString(), key.getParent()
                 .getName());
     }

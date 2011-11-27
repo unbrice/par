@@ -105,11 +105,11 @@ public class DeviceWaker {
         int retried = 0;
         boolean done = false;
         options.header(DeviceWakerServlet.DEVICE_ID_HTTP_PARAM,
-                deviceId.toBase64url());
+                deviceId.value);
         options.header(DeviceWakerServlet.USER_ID_HTTP_PARAM,
                 ownerId.asString());
         options.countdownMillis(WAKE_DELAY_MILLIS);
-        options.taskName(deviceId.toBase64url());
+        options.taskName(deviceId.value);
 
         do
             try {

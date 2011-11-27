@@ -16,7 +16,9 @@
  */
 package net.vleu.par.android.rpc;
 
-import net.vleu.par.protocolbuffer.Devices.DeviceIdData;
+import net.vleu.par.models.DeviceId;
+import net.vleu.par.models.DeviceIdBuilder;
+import net.vleu.par.protocolbuffer.Devices.DeviceIdBuilderData;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.net.wifi.WifiInfo;
@@ -29,11 +31,50 @@ public final class DeviceIdentifier {
 
     };
 
-    public static DeviceIdData identifyCurrentDevice(
+    public static DeviceId identifyCurrentDevice(
             final ContentResolver contentResolver,
             final TelephonyManager telephonyManager,
             final WifiManager wifiManager) {
-        final DeviceIdData.Builder res = DeviceIdData.newBuilder();
+        final DeviceIdBuilderData builder =
+                makeIdBuilderForCurrentDevice(contentResolver,
+                        telephonyManager, wifiManager);
+        return DeviceIdBuilder.fromProtocolBufferToDeviceId(builder);
+    }
+
+    public static DeviceId identifyCurrentDevice(final Context context) {
+        return identifyCurrentDevice(context.getContentResolver(),
+                (TelephonyManager) context
+                        .getSystemService(Context.TELEPHONY_SERVICE),
+                (WifiManager) context.getSystemService(Context.WIFI_SERVICE));
+    }
+
+    private static boolean isValidAndroidId(final String androidId) {
+        /* null is not a valid ID */
+        if (androidId == null)
+            return false;
+
+        /* Check that it is an hexadecimal number. Archos, I am looking at you. */
+        try {
+            Long.parseLong(androidId, 16);
+        }
+        catch (final NumberFormatException e) {
+            return false;
+        }
+
+        /* Almost done, just check the blacklist */
+        for (final String blackListed : BLACKLISTED_ANDROID_IDS)
+            if (blackListed.equals(androidId))
+                return false;
+
+        return true;
+    }
+
+    public static DeviceIdBuilderData makeIdBuilderForCurrentDevice(
+            final ContentResolver contentResolver,
+            final TelephonyManager telephonyManager,
+            final WifiManager wifiManager) {
+        final DeviceIdBuilderData.Builder res =
+                DeviceIdBuilderData.newBuilder();
         final long value;
 
         /* 1: Android ID */
@@ -73,34 +114,6 @@ public final class DeviceIdentifier {
         }
         throw new InternalError("TODO: Add other ids");
 
-    }
-
-    public static DeviceIdData identifyCurrentDevice(final Context context) {
-        return identifyCurrentDevice(context.getContentResolver(),
-                (TelephonyManager) context
-                        .getSystemService(Context.TELEPHONY_SERVICE),
-                (WifiManager) context.getSystemService(Context.WIFI_SERVICE));
-    }
-
-    private static boolean isValidAndroidId(final String androidId) {
-        /* null is not a valid ID */
-        if (androidId == null)
-            return false;
-
-        /* Check that it is an hexadecimal number. Archos, I am looking at you. */
-        try {
-            Long.parseLong(androidId, 16);
-        }
-        catch (final NumberFormatException e) {
-            return false;
-        }
-
-        /* Almost done, just check the blacklist */
-        for (final String blackListed : BLACKLISTED_ANDROID_IDS)
-            if (blackListed.equals(androidId))
-                return false;
-
-        return true;
     }
 
     private DeviceIdentifier() {

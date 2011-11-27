@@ -46,7 +46,7 @@ public final class DeviceEntity {
                 new DeviceName(
                         (String) entity.getProperty(FRIENDLY_NAME_PROPERTY));
         final DeviceId id =
-                DeviceId.fromBase64urlWithNoVerifications(entity.getKey()
+                new DeviceId(entity.getKey()
                         .getName());
         if (c2dmRegistrationIdStr != null)
             c2dmRegistrationId = new C2dmToken(c2dmRegistrationIdStr);
@@ -70,7 +70,7 @@ public final class DeviceEntity {
 
     public static Key keyForIds(final UserId ownerId, final DeviceId deviceId) {
         final Key parentKey = UserEntity.keyForId(ownerId);
-        return parentKey.getChild(KIND, deviceId.toBase64url());
+        return parentKey.getChild(KIND, deviceId.value);
     }
 
     private DeviceEntity() {
