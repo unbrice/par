@@ -16,37 +16,24 @@
  */
 package net.vleu.par.gwt.client.events;
 
-import net.vleu.par.protocolbuffer.DirectiveData;
-
 import com.google.web.bindery.event.shared.Event;
 
 /**
- * Represents the fact that the user created a new directive, probably by hiting
- * the "send" button of a screen
+ * Represents the fact that the list of known devices changed, possibly because
+ * of a {@link DeviceListReceivedEvent}
  */
-public class NewDirectiveEvent extends Event<NewDirectiveHandler> {
+public class DeviceListChangedEvent extends Event<DeviceListChangedHandler> {
+    public static final Event.Type<DeviceListChangedHandler> TYPE =
+            new Event.Type<DeviceListChangedHandler>();
 
-    public static final Event.Type<NewDirectiveHandler> TYPE =
-            new Event.Type<NewDirectiveHandler>();
-
-    private final DirectiveData directive;
-
-    public NewDirectiveEvent(final DirectiveData directive) {
-        this.directive = directive;
+    @Override
+    protected void dispatch(final DeviceListChangedHandler handler) {
+        handler.onDeviceListChange(this);
     }
 
     @Override
-    protected void dispatch(final NewDirectiveHandler handler) {
-        handler.onNewDirective(this);
-    }
-
-    @Override
-    public Event.Type<NewDirectiveHandler> getAssociatedType() {
+    public Type<DeviceListChangedHandler> getAssociatedType() {
         return TYPE;
-    }
-
-    public DirectiveData getDirective() {
-        return this.directive;
     }
 
 }

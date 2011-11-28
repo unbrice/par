@@ -19,8 +19,10 @@
 
   <!-- Setups the App Cache Linker to support offline use -->
   <inherits name="net.vleu.par.gwt.linker.AppCacheLinker" />
+  <inherits name="com.google.gwt.place.Place"/>
+  <inherits name="com.google.gwt.activity.Activity"/>
   <add-linker name="appcache" />
-
+  
   <!-- Specify the paths for translatable code                    -->
   <source path='client'/>
   <source path='shared'/>

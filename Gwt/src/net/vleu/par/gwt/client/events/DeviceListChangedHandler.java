@@ -14,8 +14,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package net.vleu.par.gwt.client;
+package net.vleu.par.gwt.client.events;
 
-public enum Screen {
-    STATUS_BAR_NOTIFICATION
+import com.google.gwt.event.shared.EventHandler;
+
+public interface DeviceListChangedHandler extends EventHandler {
+    void onDeviceListChange(DeviceListChangedEvent event);
 }

@@ -14,10 +14,17 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package net.vleu.par.gwt.client.events;
+package net.vleu.par.gwt.client;
 
-import com.google.gwt.event.shared.EventHandler;
+import com.google.gwt.place.shared.Place;
+import com.google.gwt.place.shared.PlaceHistoryHandler;
+import com.google.gwt.place.shared.PlaceHistoryMapper;
+import com.google.gwt.place.shared.WithTokenizers;
 
-public interface NavigationHandler extends EventHandler {
-    void onNavigation(NavigationEvent event);
+/**
+ * Declares the {@link Place}s to the {@link PlaceHistoryHandler}
+ */
+@WithTokenizers({})
+public interface AppPlaceHistoryMapper extends PlaceHistoryMapper {
+
 }
