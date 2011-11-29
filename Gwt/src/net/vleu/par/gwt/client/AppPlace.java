@@ -14,10 +14,26 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package net.vleu.par.gwt.client.events;
+package net.vleu.par.gwt.client;
 
-import com.google.gwt.event.shared.EventHandler;
+import com.google.gwt.place.shared.Place;
 
-public interface DeviceListChangedHandler extends EventHandler {
-    void onDeviceListChanged(DeviceListChangedEvent event);
+/**
+ * Base abstract class for places.
+ */
+public abstract class AppPlace extends Place {
+    protected AppPlace() {
+    }
+
+    /**
+     * Instances of {@link Place} are expected to implement this
+     */
+    @Override
+    abstract public boolean equals(Object other);
+
+    /**
+     * Instances of {@link Place} are expected to implement this
+     */
+    @Override
+    abstract public int hashCode();
 }

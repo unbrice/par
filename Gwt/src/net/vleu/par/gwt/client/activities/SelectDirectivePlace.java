@@ -22,26 +22,26 @@ import net.vleu.par.gwt.shared.DeviceId;
 
 import com.google.gwt.place.shared.PlaceTokenizer;
 
-public class CreateStatusBarNotificationPlace extends PlaceWithDeviceId {
+public class SelectDirectivePlace extends PlaceWithDeviceId {
     /**
      * Used by the {@link AppPlaceHistoryMapper}
      */
     public static class Tokenizer implements
-            PlaceTokenizer<CreateStatusBarNotificationPlace> {
+            PlaceTokenizer<SelectDirectivePlace> {
         private static final String NO_DEVICE_ID_TOKEN = "";
 
         @Override
-        public CreateStatusBarNotificationPlace getPlace(final String token) {
+        public SelectDirectivePlace getPlace(final String token) {
             final DeviceId deviceId;
             if (token.equals(NO_DEVICE_ID_TOKEN))
                 deviceId = null;
             else
                 deviceId = new DeviceId(token);
-            return new CreateStatusBarNotificationPlace(deviceId);
+            return new SelectDirectivePlace(deviceId);
         }
 
         @Override
-        public String getToken(final CreateStatusBarNotificationPlace place) {
+        public String getToken(final SelectDirectivePlace place) {
             if (place.hasDeviceId())
                 return place.getDeviceId().value;
             else
@@ -50,21 +50,20 @@ public class CreateStatusBarNotificationPlace extends PlaceWithDeviceId {
 
     }
 
-    protected CreateStatusBarNotificationPlace(final DeviceId device) {
+    protected SelectDirectivePlace(final DeviceId device) {
         super(device);
     }
 
     @Override
     public boolean equals(final Object otherObj) {
-        if (otherObj instanceof CreateStatusBarNotificationPlace)
-            return super.equals((CreateStatusBarNotificationPlace) otherObj);
+        if (otherObj instanceof SelectDirectivePlace)
+            return super.equals((SelectDirectivePlace) otherObj);
         else
             return false;
     }
 
     @Override
-    public CreateStatusBarNotificationPlace withOtherDeviceId(
-            final DeviceId deviceId) {
-        return new CreateStatusBarNotificationPlace(deviceId);
+    public SelectDirectivePlace withOtherDeviceId(final DeviceId deviceId) {
+        return new SelectDirectivePlace(deviceId);
     }
 }

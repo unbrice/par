@@ -14,25 +14,13 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package net.vleu.par.gwt.client.activities;
+package net.vleu.par.gwt.client.events;
 
-import com.google.gwt.activity.shared.AbstractActivity;
-import com.google.gwt.event.shared.EventBus;
-import com.google.gwt.place.shared.PlaceController;
-import com.google.gwt.user.client.ui.AcceptsOneWidget;
+import com.google.gwt.event.shared.EventHandler;
 
-public class MainSelectorActivity extends AbstractActivity {
-    private final PlaceController placeController;
-    
-    
-    public MainSelectorActivity(PlaceController placeController) {
-        this.placeController = placeController;
-    }
-    
-    @Override
-    public void start(AcceptsOneWidget panel, EventBus eventBus) {
-        panel.setWidget(new MainSelectorView());
-    }
-
-    
+/**
+ * An interface for handlers of {@link DeviceListRequestedEvent}
+ */
+public interface DeviceListRequestedHandler extends EventHandler {
+    void onDeviceListRequested(DeviceListRequestedEvent event);
 }

@@ -16,6 +16,9 @@
  */
 package net.vleu.par.gwt.client;
 
+import net.vleu.par.gwt.client.activities.CreateStatusBarNotificationPlace;
+import net.vleu.par.gwt.client.activities.SelectDirectivePlace;
+
 import com.google.gwt.place.shared.Place;
 import com.google.gwt.place.shared.PlaceHistoryHandler;
 import com.google.gwt.place.shared.PlaceHistoryMapper;
@@ -24,7 +27,7 @@ import com.google.gwt.place.shared.WithTokenizers;
 /**
  * Declares the {@link Place}s to the {@link PlaceHistoryHandler}
  */
-@WithTokenizers({})
+@WithTokenizers({CreateStatusBarNotificationPlace.Tokenizer.class, SelectDirectivePlace.Tokenizer.class})
 public interface AppPlaceHistoryMapper extends PlaceHistoryMapper {
 
 }

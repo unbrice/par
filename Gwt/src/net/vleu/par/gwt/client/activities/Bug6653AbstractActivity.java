@@ -16,26 +16,33 @@
  */
 package net.vleu.par.gwt.client.activities;
 
+import com.google.gwt.activity.shared.AbstractActivity;
+import com.google.gwt.activity.shared.Activity;
 import com.google.gwt.user.client.ui.AcceptsOneWidget;
 import com.google.web.bindery.event.shared.EventBus;
 
-public class CreateStatusBarNotificationActivity extends
-        Bug6653AbstractActivity {
-    private static final CreateStatusBarNotificationView viewSingleton =
-            new CreateStatusBarNotificationView();
-    private EventBus eventBus;
+/**
+ * This is a workaround for
+ * http://code.google.com/p/google-web-toolkit/issues/detail?id=6653 Use it the
+ * way you would use {@link AbstractActivity}
+ */
+public abstract class Bug6653AbstractActivity extends AbstractActivity {
 
     /**
-     * @param place
+     * Casts from {@link com.google.gwt.event.shared.EventBus} to
+     * {@link EventBus} and calls {@link #start(AcceptsOneWidget, EventBus)}
      */
-    public CreateStatusBarNotificationActivity(
-            final CreateStatusBarNotificationPlace place) {
+    @Override
+    @Deprecated
+    public void start(final AcceptsOneWidget panel,
+            final com.google.gwt.event.shared.EventBus eventBus) {
+        start(panel, (EventBus) eventBus);
     }
 
-    @Override
-    public void start(final AcceptsOneWidget panel, final EventBus eventBus) {
-        panel.setWidget(viewSingleton);
-        this.eventBus = eventBus;
-    }
+    /**
+     * @see Activity#start(AcceptsOneWidget,
+     *      com.google.gwt.event.shared.EventBus)
+     */
+    public abstract void start(AcceptsOneWidget panel, EventBus eventBus);
 
 }

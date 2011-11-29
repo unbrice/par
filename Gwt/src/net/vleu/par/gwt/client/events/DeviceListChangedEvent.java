@@ -16,6 +16,10 @@
  */
 package net.vleu.par.gwt.client.events;
 
+import java.util.ArrayList;
+
+import net.vleu.par.gwt.shared.Device;
+
 import com.google.web.bindery.event.shared.Event;
 
 /**
@@ -26,9 +30,20 @@ public class DeviceListChangedEvent extends Event<DeviceListChangedHandler> {
     public static final Event.Type<DeviceListChangedHandler> TYPE =
             new Event.Type<DeviceListChangedHandler>();
 
+    private final ArrayList<Device> newDevicesList;
+    
+    /**
+     * @param newDevicesList Cannot be null
+     */
+    public DeviceListChangedEvent(ArrayList<Device> newDevicesList) {
+        if (newDevicesList == null)
+            throw new NullPointerException("newDevicesList is null");
+        this.newDevicesList = newDevicesList;
+    }
+    
     @Override
     protected void dispatch(final DeviceListChangedHandler handler) {
-        handler.onDeviceListChange(this);
+        handler.onDeviceListChanged(this);
     }
 
     @Override
@@ -36,4 +51,7 @@ public class DeviceListChangedEvent extends Event<DeviceListChangedHandler> {
         return TYPE;
     }
 
+    public ArrayList<Device> getNewDevicesList() {
+        return newDevicesList;
+    }
 }

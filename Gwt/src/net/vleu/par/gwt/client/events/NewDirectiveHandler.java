@@ -18,6 +18,9 @@ package net.vleu.par.gwt.client.events;
 
 import com.google.gwt.event.shared.EventHandler;
 
+/**
+ * An interface for handlers of {@link NewDirectiveEvent}
+ */
 public interface NewDirectiveHandler extends EventHandler {
-    void onNewDirective(NewDirectiveEvent event);
+    void onNewGatwayRequest(NewDirectiveEvent event);
 }

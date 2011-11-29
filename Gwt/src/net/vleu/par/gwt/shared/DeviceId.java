@@ -16,6 +16,12 @@
  */
 package net.vleu.par.gwt.shared;
 
+import net.vleu.par.protocolbuffer.DeviceIdBuilderData;
+
+/**
+ * Type-safe wrapper for a device's ID; that is a {@link DeviceIdBuilderData}
+ * encoded as Base64 URL variant with no padding, as per RFC4648
+ */
 public final class DeviceId extends WrappedString implements
         Comparable<DeviceId> {
 
@@ -31,5 +37,13 @@ public final class DeviceId extends WrappedString implements
     @Override
     public int compareTo(final DeviceId other) {
         return this.value.compareTo(other.value);
+    }
+
+    @Override
+    public boolean equals(final Object other) {
+        if (other instanceof DeviceId)
+            return super.equals((DeviceId) other);
+        else
+            return false;
     }
 }

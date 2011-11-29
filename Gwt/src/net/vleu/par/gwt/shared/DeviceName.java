@@ -14,10 +14,31 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package net.vleu.par.gwt.client.events;
+package net.vleu.par.gwt.shared;
 
-import com.google.gwt.event.shared.EventHandler;
+/**
+ * Type-safe wrapper for a device's friendly name
+ */
+public final class DeviceName extends WrappedString implements
+        Comparable<DeviceName> {
 
-public interface DeviceListChangedHandler extends EventHandler {
-    void onDeviceListChanged(DeviceListChangedEvent event);
+    /**
+     * @param value A user-friendly name
+     */
+    public DeviceName(final String value) {
+        super(value);
+    }
+
+    @Override
+    public int compareTo(final DeviceName other) {
+        return this.value.compareTo(other.value);
+    }
+
+    @Override
+    public boolean equals(final Object other) {
+        if (other instanceof DeviceName)
+            return super.equals((DeviceName) other);
+        else
+            return false;
+    }
 }

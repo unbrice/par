@@ -18,34 +18,43 @@ package net.vleu.par.gwt.client;
 
 import net.vleu.par.gwt.shared.DeviceId;
 
+import com.google.gwt.activity.shared.ActivityMapper;
 import com.google.gwt.place.shared.Place;
 
 /**
  * Base abstract class for places which includes a {@link DeviceIdData} as part
- * of their state. It has helpers allowing to (un)serialize this state
+ * of their state. It has helpers allowing to (un)serialize this state.
+ * 
+ * The DeviceId can be null, in which case the {@link ActivityMapper} will
+ * present an activity that allows the user to choose one.
  */
-public abstract class PlaceWithDevice extends Place {
+public abstract class PlaceWithDeviceId extends AppPlace {
     /**
-     * Can be null
+     * Can be null, in which case the {@link ActivityMapper} will present an
+     * activity that allows the user to choose one.
      */
     private final DeviceId deviceId;
 
-    protected PlaceWithDevice(final DeviceId device) {
+    protected PlaceWithDeviceId(final DeviceId device) {
         this.deviceId = device;
     }
 
     /**
-     * Instances of {@link Place} are expected to implement this
+     * Instances of {@link Place} are expected to implement this. You can use
+     * {@link #equals(PlaceWithDeviceId)} as a helper
      */
     @Override
     abstract public boolean equals(Object other);
 
     /**
-     * @return True if the {@link PlaceWithDevice}'s fields are equal in both
+     * @return True if the {@link PlaceWithDeviceId}'s fields are equal in both
      *         objects
      */
-    protected boolean equals(final PlaceWithDevice other) {
-        return other.deviceId.equals(this.deviceId);
+    protected boolean equals(final PlaceWithDeviceId other) {
+        if (this.deviceId == null)
+            return other.deviceId == null;
+        else
+            return other.deviceId.equals(this.deviceId);
     }
 
     public DeviceId getDeviceId() {
@@ -61,10 +70,20 @@ public abstract class PlaceWithDevice extends Place {
     }
 
     /**
-     * @return A hashcode for {@link PlaceWithDevice}'s fields
+     * @return A hashcode for {@link Place}'s fields
      */
     @Override
     public int hashCode() {
-        return this.deviceId.hashCode();
+        if (this.deviceId != null)
+            return this.deviceId.hashCode();
+        else
+            return 0;
     }
+
+    /**
+     * @param deviceId
+     *            The new current {@link DeviceId}
+     * @return a place like the current one, but with another {@link DeviceId}
+     */
+    abstract public PlaceWithDeviceId withOtherDeviceId(DeviceId deviceId);
 }

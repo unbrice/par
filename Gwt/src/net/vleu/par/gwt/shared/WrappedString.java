@@ -16,6 +16,7 @@
  */
 package net.vleu.par.gwt.shared;
 
+
 /**
  * This class can inherited by classes that wraps a {@link String} so as to
  * prevent taking a string for another.
@@ -31,12 +32,17 @@ public abstract class WrappedString {
         this.value = value;
     }
 
+    /**
+     * You can use {@link #equals(WrappedString)} as a helper to implement this
+     */
     @Override
-    public boolean equals(final Object other) {
-        if (this.getClass().isInstance(other))
-            return ((WrappedString) other).value.equals(this.value);
-        else
-            return false;
+    public abstract boolean equals(Object obj);
+
+    /**
+     * Helps implementing {@link #equals(Object)}
+     */
+    protected boolean equals(final WrappedString other) {
+        return other.value.equals(this.value);
     }
 
     @Override

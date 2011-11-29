@@ -53,6 +53,7 @@ message GatewayRequestData {
 	repeated RegisterDeviceData register_device = 1;
 	repeated QueueDirectiveData queue_directive = 2;
 	repeated GetDeviceDirectivesData get_device_directives = 3;
+	optional EnumerateDevicesData enumerate_devices = 4;
 }
 
 message GatewayResponseData {

@@ -26,10 +26,15 @@ import com.google.gwt.place.shared.Place;
 public class DesktopActivityMapper implements ActivityMapper {
 
     @Override
-    public Activity getActivity(Place place) {
-        if (place instanceof CreateStatusBarNotificationPlace)
-            return new CreateStatusBarNotificationActivity((CreateStatusBarNotificationPlace) place);
-        return null;
+    public Activity getActivity(final Place place) {
+        if (place instanceof PlaceWithDeviceId
+            && !((PlaceWithDeviceId) place).hasDeviceId())
+            return null; // TODO return an activity allowing to set a device
+        else if (place instanceof CreateStatusBarNotificationPlace)
+            return new CreateStatusBarNotificationActivity(
+                    (CreateStatusBarNotificationPlace) place);
+        else
+            return null;
     }
 
 }
