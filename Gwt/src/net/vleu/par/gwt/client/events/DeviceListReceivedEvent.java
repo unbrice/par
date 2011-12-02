@@ -16,14 +16,24 @@
  */
 package net.vleu.par.gwt.client.events;
 
+import java.util.ArrayList;
+
+import net.vleu.par.gwt.shared.Device;
+
 import com.google.web.bindery.event.shared.Event;
 
 /**
- * Represents the fact that the Gateway answered with a list of the devices it knows
+ * Represents the fact that the Gateway answered with a list of the devices it
+ * knows
  */
 public class DeviceListReceivedEvent extends Event<DeviceListReceivedHandler> {
     public static final Event.Type<DeviceListReceivedHandler> TYPE =
             new Event.Type<DeviceListReceivedHandler>();
+    private final ArrayList<Device> newDeviceList;
+
+    public DeviceListReceivedEvent(final ArrayList<Device> newDeviceList) {
+        this.newDeviceList = newDeviceList;
+    }
 
     @Override
     protected void dispatch(final DeviceListReceivedHandler handler) {
@@ -35,4 +45,7 @@ public class DeviceListReceivedEvent extends Event<DeviceListReceivedHandler> {
         return TYPE;
     }
 
+    public ArrayList<Device> getNewDeviceList() {
+        return this.newDeviceList;
+    }
 }

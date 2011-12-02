@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package net.vleu.par.gwt.client;
+package net.vleu.par.gwt.client.storage;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -29,10 +29,15 @@ import com.google.gwt.user.client.Cookies;
 /**
  * Allows to persist value. Tries using Cookies, SessionStorage
  */
-public final class PersistentStorage {
+final class PersistentStorage {
     private static final String COOKIE_NAME =
             "PARGwtClient_PersistentStorage_Cookie";
 
+    /**
+     * Used to implement #getSingleton()
+     * 
+     * @see #getSingleton()
+     */
     private static PersistentStorage singleton;
 
     /**
@@ -42,6 +47,19 @@ public final class PersistentStorage {
         final Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.YEAR, 1);
         return calendar.getTime();
+    }
+
+    /**
+     * Creates or fetches a {@link PersistentStorage} backed by Cookies or
+     * (preferably) by the HTML5 storage API are supported
+     * 
+     * @return the new instance, or null if neither Cookies or the HTML5 storage
+     *         API are supported
+     */
+    public static PersistentStorage getSingleton() {
+        if (singleton == null && isSupported())
+            singleton = new PersistentStorage();
+        return singleton;
     }
 
     /**
@@ -96,19 +114,6 @@ public final class PersistentStorage {
         }
         else
             return null;
-    }
-
-    /**
-     * Creates or fetches a {@link PersistentStorage} backed by Cookies or
-     * (preferably) by the HTML5 storage API are supported
-     * 
-     * @return the new instance, or null if neither Cookies or the HTML5 storage
-     *         API are supported
-     */
-    public PersistentStorage getSingleton() {
-        if (singleton == null && isSupported())
-            singleton = new PersistentStorage();
-        return singleton;
     }
 
     /**

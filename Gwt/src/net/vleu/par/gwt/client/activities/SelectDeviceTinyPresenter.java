@@ -19,6 +19,7 @@ package net.vleu.par.gwt.client.activities;
 import net.vleu.par.gwt.client.PlaceWithDeviceId;
 import net.vleu.par.gwt.client.events.DeviceListChangedEvent;
 import net.vleu.par.gwt.client.events.DeviceListChangedHandler;
+import net.vleu.par.gwt.client.storage.AppLocalCache;
 
 import com.google.gwt.place.shared.Place;
 import com.google.gwt.place.shared.PlaceChangeEvent;
@@ -80,8 +81,8 @@ public class SelectDeviceTinyPresenter extends SelectDeviceAbstractPresenter {
      */
     private SelectDeviceTinyView view;
 
-    public SelectDeviceTinyPresenter(final EventBus eventBus, final PlaceController placeController) {
-        super(eventBus, placeController);
+    public SelectDeviceTinyPresenter(AppLocalCache appLocalCache, final EventBus eventBus, final PlaceController placeController) {
+        super(appLocalCache, eventBus, placeController);
     }
 
     @Override
@@ -102,6 +103,7 @@ public class SelectDeviceTinyPresenter extends SelectDeviceAbstractPresenter {
     public void start(final AcceptsOneWidget panel, final EventBus eventBus) {
         final EventHandler eventHandler = new EventHandler();
         this.view = new SelectDeviceTinyView(this);
+        this.view.changeDeviceList(appLocalCache.getCachedDevicesList());
         this.deviceListEventRegistration =
                 eventBus.addHandler(DeviceListChangedEvent.TYPE, eventHandler);
         this.placeChangeRegistration =

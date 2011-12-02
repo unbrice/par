@@ -18,6 +18,7 @@ package net.vleu.par.gwt.client.activities;
 
 import net.vleu.par.gwt.client.PlaceWithDeviceId;
 import net.vleu.par.gwt.client.events.DeviceListRequestedEvent;
+import net.vleu.par.gwt.client.storage.AppLocalCache;
 import net.vleu.par.gwt.shared.DeviceId;
 
 import com.google.gwt.place.shared.Place;
@@ -27,12 +28,15 @@ import com.google.web.bindery.event.shared.EventBus;
 public abstract class SelectDeviceAbstractPresenter extends
         Bug6653AbstractActivity implements SelectDeviceTinyView.Presenter {
 
+    protected final AppLocalCache appLocalCache;
+
     private final EventBus eventBus;
 
     private final PlaceController placeController;
 
-    public SelectDeviceAbstractPresenter(final EventBus eventBus,
-            final PlaceController placeController) {
+    public SelectDeviceAbstractPresenter(final AppLocalCache appLocalCache,
+            final EventBus eventBus, final PlaceController placeController) {
+        this.appLocalCache = appLocalCache;
         this.eventBus = eventBus;
         this.placeController = placeController;
     }
