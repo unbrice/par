@@ -31,14 +31,5 @@ http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
 		<url-pattern>/api/0/json</url-pattern>
 		<url-pattern>/api/0/pb</url-pattern>
 	</servlet-mapping>
-	<security-constraint>
-		<web-resource-collection>
-			<url-pattern>/api/*</url-pattern>
-		</web-resource-collection>
-		<auth-constraint>
-			<!-- Any logged user -->
-			<role-name>*</role-name>
-		</auth-constraint>
-	</security-constraint>
 
 </web-app>

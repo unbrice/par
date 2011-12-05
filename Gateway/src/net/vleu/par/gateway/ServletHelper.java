@@ -16,9 +16,16 @@
  */
 package net.vleu.par.gateway;
 
+import java.util.logging.Logger;
+
 import net.jcip.annotations.ThreadSafe;
 import net.vleu.par.models.UserId;
 
+import com.google.appengine.api.oauth.OAuthRequestException;
+import com.google.appengine.api.oauth.OAuthService;
+import com.google.appengine.api.oauth.OAuthServiceFactory;
+import com.google.appengine.api.oauth.OAuthServiceFailureException;
+import com.google.appengine.api.users.User;
 import com.google.appengine.api.users.UserService;
 import com.google.appengine.api.users.UserServiceFactory;
 
@@ -27,6 +34,12 @@ import com.google.appengine.api.users.UserServiceFactory;
  */
 @ThreadSafe
 class ServletHelper {
+    /** We only accept authentication through Google right now */
+    private static final Object ALLOWED_AUTH_DOMAIN = "gmail.com";
+    private static final Logger LOG = Logger.getLogger(ServletHelper.class
+            .getName());
+    private final ThreadLocal<OAuthService> oauthServices;
+
     private final ThreadLocal<UserService> userServices;
 
     public ServletHelper() {
@@ -35,21 +48,46 @@ class ServletHelper {
             protected UserService initialValue() {
                 return UserServiceFactory.getUserService();
             }
+        }, new ThreadLocal<OAuthService>() {
+            @Override
+            protected OAuthService initialValue() {
+                return OAuthServiceFactory.getOAuthService();
+            }
         });
     }
 
-    public ServletHelper(final ThreadLocal<UserService> userServices) {
+    public ServletHelper(final ThreadLocal<UserService> userServices,
+            final ThreadLocal<OAuthService> oauthServices) {
         this.userServices = userServices;
+        this.oauthServices = oauthServices;
     }
 
-    public synchronized UserId getCurrentUser() {
-        final com.google.appengine.api.users.User googleUser =
-                this.userServices.get().getCurrentUser();
+    public UserId getCurrentUser() {
+        User googleUser = null;
+        try {
+            /* OAuth has the priority */
+            googleUser = this.oauthServices.get().getCurrentUser();
+        }
+        catch (final OAuthRequestException e) {
+            /* Fallbacks to old Google Auth, because the Android AccountManager has no proper support for OAuth */
+            googleUser = this.userServices.get().getCurrentUser();
+        }
+        catch (final OAuthServiceFailureException e) {
+            LOG.warning("Failed contacting the OAuth service: " + e);
+        }
         if (googleUser == null)
             return null;
-        final String googleAuthId = googleUser.getUserId();
-        final UserId userId = UserId.fromGoogleAuthId(googleAuthId);
-        return userId;
+        else if (!ALLOWED_AUTH_DOMAIN.equals(googleUser.getAuthDomain())) {
+            LOG.warning("Got an user from an unknown domain: "
+                + googleUser.getAuthDomain());
+            return null;
+        }
+        else {
+            final String googleAuthId = googleUser.getUserId();
+            final UserId userId = UserId.fromGoogleAuthId(googleAuthId);
+            return userId;
+        }
+
     }
 
 }
