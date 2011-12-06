@@ -16,7 +16,8 @@
   <inherits name="com.google.gwt.logging.Logging"/>
   <inherits name="com.google.gwt.place.Place"/>
   <inherits name="com.google.gwt.activity.Activity"/>
-
+  <inherits name="com.google.gwt.http.HTTP"/>
+  
   <!-- Specify the app entry point class.                         -->
   <entry-point class='net.vleu.par.gwt.client.PARGwt'/>
 

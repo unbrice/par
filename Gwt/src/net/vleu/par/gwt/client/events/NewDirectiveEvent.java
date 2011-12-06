@@ -16,22 +16,26 @@
  */
 package net.vleu.par.gwt.client.events;
 
+import net.vleu.par.gwt.shared.DeviceId;
 import net.vleu.par.protocolbuffer.DirectiveData;
 
 import com.google.web.bindery.event.shared.Event;
 
 /**
- * Represents the fact that the user created a new directive,
- * probably by hitting the "send" button of a screen
+ * Represents the fact that the user created a new directive, probably by
+ * hitting the "send" button of a screen
  */
 public class NewDirectiveEvent extends Event<NewDirectiveHandler> {
 
     public static final Event.Type<NewDirectiveHandler> TYPE =
             new Event.Type<NewDirectiveHandler>();
 
+    private final DeviceId deviceId;
     private final DirectiveData directive;
 
-    public NewDirectiveEvent(final DirectiveData directive) {
+    public NewDirectiveEvent(final DeviceId deviceId,
+            final DirectiveData directive) {
+        this.deviceId = deviceId;
         this.directive = directive;
     }
 
@@ -43,6 +47,10 @@ public class NewDirectiveEvent extends Event<NewDirectiveHandler> {
     @Override
     public Event.Type<NewDirectiveHandler> getAssociatedType() {
         return TYPE;
+    }
+
+    public DeviceId getDeviceId() {
+        return this.deviceId;
     }
 
     public DirectiveData getDirective() {
