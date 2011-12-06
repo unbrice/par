@@ -32,4 +32,16 @@ http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
 		<url-pattern>/api/0/pb</url-pattern>
 	</servlet-mapping>
 
+	<static-files>
+		<include path="ui/**" />
+		<!-- The following line requires App Engine 1.3.2 SDK -->
+		<include path="**.nocache.*" expiration="0s" />
+		<include path="**.cache.*" expiration="365d" />
+		<exclude path="**.gwt.rpc" />
+		<mime-mapping>
+		    <extension>manifest</extension>
+		    <mime-type>text/cache-manifest</mime-type>
+		</mime-mapping>
+	</static-files>
+
 </web-app>
