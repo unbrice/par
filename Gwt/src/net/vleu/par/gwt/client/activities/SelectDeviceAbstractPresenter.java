@@ -16,10 +16,14 @@
  */
 package net.vleu.par.gwt.client.activities;
 
+import java.util.ArrayList;
+
 import net.vleu.par.gwt.client.PlaceWithDeviceId;
 import net.vleu.par.gwt.client.events.DeviceListRequestedEvent;
 import net.vleu.par.gwt.client.storage.AppLocalCache;
+import net.vleu.par.gwt.shared.Device;
 import net.vleu.par.gwt.shared.DeviceId;
+import net.vleu.par.gwt.shared.DeviceName;
 
 import com.google.gwt.place.shared.Place;
 import com.google.gwt.place.shared.PlaceController;
@@ -39,6 +43,42 @@ public abstract class SelectDeviceAbstractPresenter extends
         this.appLocalCache = appLocalCache;
         this.eventBus = eventBus;
         this.placeController = placeController;
+    }
+
+    /**
+     * @return a non-null list of known devices from the cache. The current
+     *         device will be added to that list if absent
+     */
+    protected ArrayList<Device> buildInitialDevicesList() {
+        final DeviceId currentId = getCurrentDeviceId();
+        boolean resultContainsCurrentId = false;
+        ArrayList<Device> res = this.appLocalCache.getCachedDevicesList();
+        if (res == null)
+            res = new ArrayList<Device>(1);
+        /* Adds the current device id if there is one  */
+        if (currentId != null) {
+            for (final Device device : res)
+                if (currentId.equals(device.deviceId))
+                    resultContainsCurrentId = true;
+            if (!resultContainsCurrentId) {
+                final Device currentDevice =
+                        new Device(currentId, new DeviceName(currentId.value));
+                res.add(currentDevice);
+            }
+        }
+        return res;
+    }
+
+    /**
+     * @return the {@link DeviceId} associated with the current {@link Place},
+     *         null if there is none
+     */
+    private DeviceId getCurrentDeviceId() {
+        final Place where = this.placeController.getWhere();
+        if (where instanceof PlaceWithDeviceId)
+            return ((PlaceWithDeviceId) where).getDeviceId();
+        else
+            return null;
     }
 
     @Override

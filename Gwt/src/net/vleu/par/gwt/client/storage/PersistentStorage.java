@@ -16,7 +16,6 @@
  */
 package net.vleu.par.gwt.client.storage;
 
-import java.util.Calendar;
 import java.util.Date;
 
 import com.google.gwt.json.client.JSONObject;
@@ -43,10 +42,12 @@ final class PersistentStorage {
     /**
      * @return A date one year from now
      */
+    @SuppressWarnings("deprecation")
     private static Date computeCookieExpiryDate() {
-        final Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.YEAR, 1);
-        return calendar.getTime();
+        final Date rest = new Date();
+        // Using Calendar causes linking errors
+        rest.setYear(rest.getYear() + 1);
+        return rest;
     }
 
     /**

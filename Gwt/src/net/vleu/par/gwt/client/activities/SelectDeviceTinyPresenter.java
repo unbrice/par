@@ -81,7 +81,8 @@ public class SelectDeviceTinyPresenter extends SelectDeviceAbstractPresenter {
      */
     private SelectDeviceTinyView view;
 
-    public SelectDeviceTinyPresenter(AppLocalCache appLocalCache, final EventBus eventBus, final PlaceController placeController) {
+    public SelectDeviceTinyPresenter(final AppLocalCache appLocalCache,
+            final EventBus eventBus, final PlaceController placeController) {
         super(appLocalCache, eventBus, placeController);
     }
 
@@ -103,7 +104,7 @@ public class SelectDeviceTinyPresenter extends SelectDeviceAbstractPresenter {
     public void start(final AcceptsOneWidget panel, final EventBus eventBus) {
         final EventHandler eventHandler = new EventHandler();
         this.view = new SelectDeviceTinyView(this);
-        this.view.changeDeviceList(appLocalCache.getCachedDevicesList());
+        this.view.changeDeviceList(buildInitialDevicesList());
         this.deviceListEventRegistration =
                 eventBus.addHandler(DeviceListChangedEvent.TYPE, eventHandler);
         this.placeChangeRegistration =
