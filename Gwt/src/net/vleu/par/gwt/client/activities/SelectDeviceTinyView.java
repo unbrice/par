@@ -70,8 +70,10 @@ public class SelectDeviceTinyView extends Composite implements HasEnabled {
     }
 
     /**
+     * Updates the list of devices
+     * 
      * If the newDeviceList has a {@link Device} with the same
-     * {@link Device#deviceId} as the currently selected on, it will stay
+     * {@link Device#deviceId} as the currently selected, it will stay
      * selected
      * 
      * @param newDeviceList The new devices

@@ -2,6 +2,7 @@ package net.vleu.par.gwt.client;
 
 import net.vleu.par.gwt.client.activities.SelectDirectiveActivity;
 import net.vleu.par.gwt.client.activities.SelectDeviceTinyPresenter;
+import net.vleu.par.gwt.client.events.DeviceListRequestedEvent;
 import net.vleu.par.gwt.client.storage.AppLocalCache;
 
 import com.google.gwt.activity.shared.ActivityManager;
@@ -41,6 +42,7 @@ public class PARGwt implements EntryPoint {
         deviceSelector.start(ui.getTopPanel(), this.eventBus);
         this.activityManager.setDisplay(ui.getMainPanel());
         RootPanel.get("rootContainer").add(ui);
+        eventBus.fireEvent(new DeviceListRequestedEvent());
     }
 
 }

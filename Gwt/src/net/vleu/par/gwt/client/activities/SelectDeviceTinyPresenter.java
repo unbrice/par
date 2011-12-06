@@ -16,12 +16,14 @@
  */
 package net.vleu.par.gwt.client.activities;
 
+import java.util.ArrayList;
+
 import net.vleu.par.gwt.client.PlaceWithDeviceId;
 import net.vleu.par.gwt.client.events.DeviceListChangedEvent;
 import net.vleu.par.gwt.client.events.DeviceListChangedHandler;
 import net.vleu.par.gwt.client.storage.AppLocalCache;
+import net.vleu.par.gwt.shared.Device;
 
-import com.google.gwt.place.shared.Place;
 import com.google.gwt.place.shared.PlaceChangeEvent;
 import com.google.gwt.place.shared.PlaceController;
 import com.google.gwt.user.client.ui.AcceptsOneWidget;
@@ -50,8 +52,13 @@ public class SelectDeviceTinyPresenter extends SelectDeviceAbstractPresenter {
          */
         @Override
         public void onDeviceListChanged(final DeviceListChangedEvent event) {
-            SelectDeviceTinyPresenter.this.view.changeDeviceList(event
-                    .getNewDevicesList());
+            final ArrayList<Device> newDeviceList = event.getNewDevicesList();
+            final ArrayList<Device> deviceListWithCurrentDevice =
+                    cloneWithCurrentDevice(newDeviceList);
+            // Does not use #buildDevicesList() because the cache might
+            // not have been refreshed yet
+            SelectDeviceTinyPresenter.this.view
+                    .changeDeviceList(deviceListWithCurrentDevice);
         }
 
         /**
@@ -60,7 +67,7 @@ public class SelectDeviceTinyPresenter extends SelectDeviceAbstractPresenter {
          */
         @Override
         public void onPlaceChange(final PlaceChangeEvent event) {
-            reflectCurrentPlaceOnTheView(event.getNewPlace());
+            reflectCurrentPlaceOnTheView();
         }
 
     }
@@ -93,9 +100,12 @@ public class SelectDeviceTinyPresenter extends SelectDeviceAbstractPresenter {
         this.placeChangeRegistration.removeHandler();
     }
 
-    private void reflectCurrentPlaceOnTheView(final Place place) {
-        if (place instanceof PlaceWithDeviceId)
+    private void reflectCurrentPlaceOnTheView() {
+        if (getWhere() instanceof PlaceWithDeviceId) {
             SelectDeviceTinyPresenter.this.view.setEnabled(true);
+            SelectDeviceTinyPresenter.this.view
+                    .changeDeviceList(buildDevicesList());
+        }
         else
             SelectDeviceTinyPresenter.this.view.setEnabled(false);
     }
@@ -104,11 +114,11 @@ public class SelectDeviceTinyPresenter extends SelectDeviceAbstractPresenter {
     public void start(final AcceptsOneWidget panel, final EventBus eventBus) {
         final EventHandler eventHandler = new EventHandler();
         this.view = new SelectDeviceTinyView(this);
-        this.view.changeDeviceList(buildInitialDevicesList());
         this.deviceListEventRegistration =
                 eventBus.addHandler(DeviceListChangedEvent.TYPE, eventHandler);
         this.placeChangeRegistration =
                 eventBus.addHandler(PlaceChangeEvent.TYPE, eventHandler);
+        reflectCurrentPlaceOnTheView();
         panel.setWidget(this.view);
     }
 }

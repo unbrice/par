@@ -18,6 +18,9 @@ package net.vleu.par.gwt.client.events;
 
 import com.google.gwt.event.shared.EventHandler;
 
+/**
+ * Handler for {@link DeviceListChangedEvent}
+ */
 public interface DeviceListChangedHandler extends EventHandler {
     void onDeviceListChanged(DeviceListChangedEvent event);
 }

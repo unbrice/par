@@ -27,9 +27,10 @@ public class DesktopActivityMapper implements ActivityMapper {
 
     @Override
     public Activity getActivity(final Place place) {
+        // TODO: If the current device is not in the cache, show a message explaining how to change the device
         if (place instanceof PlaceWithDeviceId
             && !((PlaceWithDeviceId) place).hasDeviceId())
-            return null; // TODO return an activity allowing to set a device
+            return null; // TODO return an activity explaining to set a device
         else if (place instanceof CreateStatusBarNotificationPlace)
             return new CreateStatusBarNotificationActivity(
                     (CreateStatusBarNotificationPlace) place);

@@ -18,29 +18,35 @@ package net.vleu.par.gwt.client.events;
 
 import java.util.ArrayList;
 
+import net.vleu.par.gwt.client.PlaceWithDeviceId;
 import net.vleu.par.gwt.shared.Device;
+import net.vleu.par.gwt.shared.DeviceId;
 
+import com.google.gwt.place.shared.PlaceChangeEvent;
 import com.google.web.bindery.event.shared.Event;
 
 /**
  * Represents the fact that the list of known devices changed, possibly because
- * of a {@link DeviceListReceivedEvent}
+ * of a {@link DeviceListReceivedEvent}, or because a {@link PlaceChangeEvent}
+ * indicates that the user went to a {@link PlaceWithDeviceId} with a previously
+ * unknown {@link DeviceId}
  */
 public class DeviceListChangedEvent extends Event<DeviceListChangedHandler> {
     public static final Event.Type<DeviceListChangedHandler> TYPE =
             new Event.Type<DeviceListChangedHandler>();
 
     private final ArrayList<Device> newDevicesList;
-    
+
     /**
-     * @param newDevicesList Cannot be null
+     * @param newDevicesList
+     *            Cannot be null
      */
-    public DeviceListChangedEvent(ArrayList<Device> newDevicesList) {
+    public DeviceListChangedEvent(final ArrayList<Device> newDevicesList) {
         if (newDevicesList == null)
             throw new NullPointerException("newDevicesList is null");
         this.newDevicesList = newDevicesList;
     }
-    
+
     @Override
     protected void dispatch(final DeviceListChangedHandler handler) {
         handler.onDeviceListChanged(this);
@@ -52,6 +58,6 @@ public class DeviceListChangedEvent extends Event<DeviceListChangedHandler> {
     }
 
     public ArrayList<Device> getNewDevicesList() {
-        return newDevicesList;
+        return this.newDevicesList;
     }
 }
