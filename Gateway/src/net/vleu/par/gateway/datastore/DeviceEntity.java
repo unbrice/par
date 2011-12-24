@@ -32,7 +32,7 @@ public final class DeviceEntity {
     static final String FRIENDLY_NAME_PROPERTY = "friendlyName";
     static final String KIND = "Device";
 
-    static Query buildQueryForOwnedDevices(final UserId ownerId) {
+    public static Query buildQueryForOwnedDevices(final UserId ownerId) {
         final Key parentKey = UserEntity.keyForId(ownerId);
         return new Query(KIND, parentKey);
     }

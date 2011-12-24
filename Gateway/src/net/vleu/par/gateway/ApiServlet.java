@@ -33,16 +33,19 @@ import net.vleu.par.C2dmToken;
 import net.vleu.par.Config;
 import net.vleu.par.DeviceName;
 import net.vleu.par.gateway.datastore.TooManyConcurrentAccesses;
+import net.vleu.par.models.Device;
 import net.vleu.par.models.DeviceId;
 import net.vleu.par.models.Directive;
 import net.vleu.par.models.GatewayRequest;
 import net.vleu.par.models.UserId;
 import net.vleu.par.protocolbuffer.Commands.DirectiveData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData;
+import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.EnumerateDevicesData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.GetDeviceDirectivesData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.QueueDirectiveData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.RegisterDeviceData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayResponseData;
+import net.vleu.par.protocolbuffer.GatewayCommands.GatewayResponseData.DeviceDescriptionData;
 import net.vleu.par.protocolbuffer.SchemaGatewayCommands;
 
 import com.dyuproject.protostuff.JsonIOUtil;
@@ -110,6 +113,20 @@ public final class ApiServlet extends HttpServlet {
                 final UserId userId) {
             this.userId = userId;
             this.resp = resp;
+        }
+
+        @Override
+        public void visit(final EnumerateDevicesData data) throws Exception {
+            final ArrayList<Device> deviceList =
+                    ApiServlet.this.deviceRegistrar
+                            .enumerateOwnedDevices(this.userId);
+            for (final Device device : deviceList) {
+                final DeviceDescriptionData.Builder deviceProto =
+                        DeviceDescriptionData.newBuilder();
+                deviceProto.setDeviceId(device.getId().value);
+                deviceProto.setFriendlyName(device.getUserFriendlyName().value);
+                this.resp.addDeviceDescriptions(deviceProto);
+            }
         }
 
         @Override

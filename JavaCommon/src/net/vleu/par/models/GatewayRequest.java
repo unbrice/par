@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData;
+import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.EnumerateDevicesData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.GetDeviceDirectivesData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.QueueDirectiveData;
 import net.vleu.par.protocolbuffer.GatewayCommands.GatewayRequestData.RegisterDeviceData;
@@ -34,6 +35,8 @@ public final class GatewayRequest {
      * {@linkplain Exception}.
      */
     public static interface ThrowingVisitor {
+        public void visit(EnumerateDevicesData data) throws Exception;
+
         public void visit(GetDeviceDirectivesData data) throws Exception;
 
         public void visit(QueueDirectiveData data) throws Exception;
@@ -66,6 +69,11 @@ public final class GatewayRequest {
         }
 
         @Override
+        public void visit(final EnumerateDevicesData data) {
+            // Nothing to do
+        }
+
+        @Override
         public void visit(final GetDeviceDirectivesData data) {
             checkDeviceId(data.getDeviceId());
         }
@@ -85,6 +93,9 @@ public final class GatewayRequest {
 
     public static interface Visitor extends ThrowingVisitor {
         @Override
+        public void visit(EnumerateDevicesData data);
+
+        @Override
         public void visit(GetDeviceDirectivesData data);
 
         @Override
@@ -103,6 +114,7 @@ public final class GatewayRequest {
         for (final GetDeviceDirectivesData proto : reqData
                 .getGetDeviceDirectivesList())
             visitor.visit(proto);
+        visitor.visit(reqData.getEnumerateDevices());
     }
 
     public static void accept(final GatewayRequestData reqData,

@@ -16,6 +16,13 @@
  */
 package net.vleu.par.gateway;
 
+import static com.google.appengine.api.datastore.FetchOptions.Builder.withChunkSize;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import sun.util.LocaleServiceProviderPool.LocalizedObjectGetter;
+
 import net.jcip.annotations.ThreadSafe;
 import net.vleu.par.C2dmToken;
 import net.vleu.par.DeviceName;
@@ -27,9 +34,15 @@ import net.vleu.par.models.UserId;
 
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.FetchOptions;
+import com.google.appengine.api.datastore.Query;
 
 @ThreadSafe
 public class DeviceRegistrar {
+
+    private static final FetchOptions FETCH_ALL_OPTIONS = withChunkSize(
+            Integer.MAX_VALUE).prefetchSize(Integer.MAX_VALUE);
+
     /**
      * The GAE datastore where to store the {@link DeviceEntity}. They have to
      * be local because the {@link DatastoreService} are not thread-safe.
@@ -53,6 +66,22 @@ public class DeviceRegistrar {
     /**
      * @param ownerId
      *            The user who registered the device
+     */
+    public ArrayList<Device> enumerateOwnedDevices(final UserId ownerId) {
+        final ArrayList<Device> result = new ArrayList<Device>();
+        final DatastoreService datastore = this.datastores.get();
+        final Query query = DeviceEntity.buildQueryForOwnedDevices(ownerId);
+        final List<Entity> queryResult =
+                datastore.prepare(null, query).asList(FETCH_ALL_OPTIONS);
+        for (final Entity entity : queryResult)
+            result.add(DeviceEntity.deviceFromEntity(entity));
+        result.add(new Device(new DeviceId("id"), new DeviceName(ownerId.asString())));
+        return result;
+    }
+
+    /**
+     * @param ownerId
+     *            The user who registered the device
      * @param deviceId
      *            The device to wake up.
      * @param friendlyName
@@ -68,5 +97,4 @@ public class DeviceRegistrar {
                 DeviceEntity.entityFromDevice(ownerId, device);
         this.datastores.get().put(null, deviceEntity);
     }
-
 }
