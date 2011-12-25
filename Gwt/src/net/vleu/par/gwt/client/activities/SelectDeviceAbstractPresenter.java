@@ -116,13 +116,35 @@ public abstract class SelectDeviceAbstractPresenter extends
     }
 
     /**
+     * @see PlaceController#getWhere()
+     * @return this.placeController.getWhere()
+     */
+    protected Place getWhere() {
+        return this.placeController.getWhere();
+    }
+
+    /**
+     * If no device is currently selected, and the provided devicesList is not empty, sets
+     * the current device as the first element of the devicesList.
+     * @param devicesList The list from which to pick the default device
+     */
+    // TODO: Refact in an AutomaticTransitionMaker
+    protected void goToDefaultDeviceIfNoneSelected(
+            final ArrayList<Device> devicesList) {
+        if (getCurrentDeviceId() == null && devicesList.size() > 0)
+            goToSamePlaceOtherDevice(devicesList.get(0).deviceId);
+    }
+
+    /**
      * Calls {@link #goToSamePlaceOtherDevice(DeviceId)} with null as argument
      * if the current device, as returned by {@link #getCurrentDeviceId()} is
      * not present in the list
      * 
-     * Deprecated because it seems cleaner to have the {@link DesktopActivityMapper}
-     * to handle this by hiding the activity if the device is unknown
+     * Deprecated because it seems cleaner to have the
+     * {@link DesktopActivityMapper} to handle this by hiding the activity if
+     * the device is unknown
      */
+    // TODO: Refact in an AutomaticTransitionMaker
     @Deprecated
     protected void
             gotoForgetCurrentDeviceIfAbsent(final ArrayList<Device> list) {
@@ -130,14 +152,6 @@ public abstract class SelectDeviceAbstractPresenter extends
         if (currentDeviceId != null
             && !containsDeviceWithId(list, currentDeviceId))
             goToSamePlaceOtherDevice(null);
-    }
-    
-    /**
-     * @see PlaceController#getWhere()
-     * @return this.placeController.getWhere()
-     */
-    protected Place getWhere() {
-        return this.placeController.getWhere();
     }
 
     @Override
@@ -149,7 +163,7 @@ public abstract class SelectDeviceAbstractPresenter extends
             this.placeController.goTo(newPlace);
         }
     }
-   
+
     @Override
     public void refreshDevices() {
         final DeviceListRequestedEvent event = new DeviceListRequestedEvent();

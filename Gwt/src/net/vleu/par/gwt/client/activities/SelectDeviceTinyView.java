@@ -22,6 +22,7 @@ import net.vleu.par.gwt.shared.Device;
 import net.vleu.par.gwt.shared.DeviceId;
 
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.i18n.client.HasDirection;
 import com.google.gwt.uibinder.client.UiBinder;
@@ -73,35 +74,55 @@ public class SelectDeviceTinyView extends Composite implements HasEnabled {
      * Updates the list of devices
      * 
      * If the newDeviceList has a {@link Device} with the same
-     * {@link Device#deviceId} as the currently selected, it will stay
-     * selected
+     * {@link Device#deviceId} as the currently selected, it will stay selected
      * 
-     * @param newDeviceList The new devices
+     * @param newDeviceList
+     *            The new devices
      */
     public synchronized void changeDeviceList(
             final ArrayList<Device> newDeviceList) {
         final DeviceId currentlySelected = getCurrentlySelectDeviceId();
         int index = 0;
+        this.deviceCombo.clear();
         for (final Device device : newDeviceList) {
             this.deviceCombo.addItem(device.deviceName.value,
                     HasDirection.Direction.LTR, device.deviceId.value);
-            if (currentlySelected.equals(device))
+            if (device.equals(currentlySelected))
                 this.deviceCombo.setSelectedIndex(index);
             index++;
         }
+        this.deviceCombo.addItem(NO_DEVICE_COMBO_ITEM);
+        if (currentlySelected == null) {
+            this.deviceCombo.setSelectedIndex(index);
+        }
     }
 
+    /** An item that represents the fact that no Device is selected with the {@link #deviceCombo} */
+    private static final String NO_DEVICE_COMBO_ITEM = "";
+    
+    /**
+     * @return The {@link DeviceId} of the currently selected device, null if
+     *         none.
+     */
     public synchronized DeviceId getCurrentlySelectDeviceId() {
         final int index = this.deviceCombo.getSelectedIndex();
         if (index == -1)
             return null;
         final String deviceIdStr = this.deviceCombo.getValue(index);
-        return new DeviceId(deviceIdStr);
+        if (NO_DEVICE_COMBO_ITEM.equals(deviceIdStr))
+            return null;
+        else
+            return new DeviceId(deviceIdStr);
     }
 
     @Override
     public synchronized boolean isEnabled() {
         return this.deviceCombo.isEnabled() && this.refreshButton.isEnabled();
+    }
+
+    @UiHandler("deviceCombo")
+    void onDeviceComboChange(final ChangeEvent event) {
+        this.presenter.goToSamePlaceOtherDevice(getCurrentlySelectDeviceId());
     }
 
     @UiHandler("refreshButton")

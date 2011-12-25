@@ -205,7 +205,7 @@ public class Transceiver implements DeviceListRequestedHandler,
     public void onResponseReceived(final GatewayRequestData request,
             final GatewayResponseData response) {
         final int devicesNumber = response.getDeviceDescriptionsCount();
-        if (devicesNumber > 1) {
+        if (devicesNumber > 0) {
             final ArrayList<Device> devicesList =
                     new ArrayList<Device>(devicesNumber);
             for (int n = 0; n < devicesNumber; n++) {

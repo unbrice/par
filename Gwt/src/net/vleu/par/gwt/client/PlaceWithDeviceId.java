@@ -54,7 +54,7 @@ public abstract class PlaceWithDeviceId extends AppPlace {
         if (this.deviceId == null)
             return other.deviceId == null;
         else
-            return other.deviceId.equals(this.deviceId);
+            return this.deviceId.equals(other.deviceId);
     }
 
     public DeviceId getDeviceId() {

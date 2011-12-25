@@ -75,7 +75,6 @@ public class DeviceRegistrar {
                 datastore.prepare(null, query).asList(FETCH_ALL_OPTIONS);
         for (final Entity entity : queryResult)
             result.add(DeviceEntity.deviceFromEntity(entity));
-        result.add(new Device(new DeviceId("id"), new DeviceName(ownerId.asString())));
         return result;
     }
 
