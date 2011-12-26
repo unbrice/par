@@ -21,9 +21,7 @@ import com.google.web.bindery.event.shared.EventBus;
 
 public class CreateStatusBarNotificationActivity extends
         Bug6653AbstractActivity {
-    private static final CreateStatusBarNotificationView viewSingleton =
-            new CreateStatusBarNotificationView();
-    private EventBus eventBus;
+    private static CreateStatusBarNotificationView viewSingleton = null;
 
     /**
      * @param place
@@ -34,8 +32,9 @@ public class CreateStatusBarNotificationActivity extends
 
     @Override
     public void start(final AcceptsOneWidget panel, final EventBus eventBus) {
+        if (viewSingleton == null)
+            viewSingleton = new CreateStatusBarNotificationView();
         panel.setWidget(viewSingleton);
-        this.eventBus = eventBus;
     }
 
 }
