@@ -21,8 +21,6 @@ import static com.google.appengine.api.datastore.FetchOptions.Builder.withChunkS
 import java.util.ArrayList;
 import java.util.List;
 
-import sun.util.LocaleServiceProviderPool.LocalizedObjectGetter;
-
 import net.jcip.annotations.ThreadSafe;
 import net.vleu.par.C2dmToken;
 import net.vleu.par.DeviceName;
