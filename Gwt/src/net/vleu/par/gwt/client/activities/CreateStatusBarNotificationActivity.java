@@ -16,25 +16,48 @@
  */
 package net.vleu.par.gwt.client.activities;
 
+import net.vleu.par.gwt.client.events.NewDirectiveEvent;
+import net.vleu.par.gwt.shared.DeviceId;
+import net.vleu.par.protocolbuffer.DirectiveData;
+import net.vleu.par.protocolbuffer.StatusBarNotificationData;
+
 import com.google.gwt.user.client.ui.AcceptsOneWidget;
 import com.google.web.bindery.event.shared.EventBus;
 
 public class CreateStatusBarNotificationActivity extends
-        Bug6653AbstractActivity {
+        Bug6653AbstractActivity implements
+        CreateStatusBarNotificationView.Presenter {
     private static CreateStatusBarNotificationView viewSingleton = null;
+    private final DeviceId currentDeviceId;
+
+    private EventBus eventBus;
 
     /**
      * @param place
      */
     public CreateStatusBarNotificationActivity(
             final CreateStatusBarNotificationPlace place) {
+        this.currentDeviceId = place.getDeviceId();
+    }
+
+    /**
+     * 
+     * @see CreateStatusBarNotificationView.Presenter#send(net.vleu.par.protocolbuffer.StatusBarNotificationData)
+     */
+    @Override
+    public void send(final StatusBarNotificationData statusBarNotification) {
+        final DirectiveData directive = DirectiveData.create();
+        directive.addStatusbarNotification(statusBarNotification);
+        final NewDirectiveEvent event =
+                new NewDirectiveEvent(this.currentDeviceId, directive);
+        this.eventBus.fireEventFromSource(event, this);
     }
 
     @Override
     public void start(final AcceptsOneWidget panel, final EventBus eventBus) {
         if (viewSingleton == null)
-            viewSingleton = new CreateStatusBarNotificationView();
+            viewSingleton = new CreateStatusBarNotificationView(this);
+        this.eventBus = eventBus;
         panel.setWidget(viewSingleton);
     }
-
 }

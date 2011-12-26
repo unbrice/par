@@ -7,11 +7,30 @@
 			font-weight: bold;
 		}
 	</ui:style>
-	<g:HTMLPanel>
-		<!-- Add GWT widgets here. Enter < and hit Ctrl-Space to auto-complete 
-			widget names. The ui:field attribute binds an element to a field in the owner 
-			class. See the GWT docs on UI Binder for more details. -->
-		Hello,
-		<g:Button styleName="{style.important}" ui:field="button" />
-	</g:HTMLPanel>
+	<g:Grid>
+		<g:row>
+			<g:customCell>
+				<g:Label text="Title" />
+			</g:customCell>
+			<g:customCell>
+				<g:TextBox ui:field="titleBox" />
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label text="Text" />
+			</g:customCell>
+			<g:customCell>
+				<g:TextBox ui:field="textBox" />
+			</g:customCell>
+		</g:row>
+		<g:row>
+			<g:customCell>
+				<g:Label/>
+			</g:customCell>
+			<g:customCell>
+				<g:Button styleName="{style.important}" ui:field="sendButton" text="OK" />
+			</g:customCell>
+		</g:row>
+	</g:Grid>
 </ui:UiBinder> 

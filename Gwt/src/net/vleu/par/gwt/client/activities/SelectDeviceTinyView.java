@@ -40,6 +40,9 @@ import com.google.gwt.user.client.ui.Widget;
  */
 public class SelectDeviceTinyView extends Composite implements HasEnabled {
 
+    /**
+     * A presenter (in the MVP sense) for {@link SelectDeviceTinyView}
+     */
     public static interface Presenter {
         public void goToSamePlaceOtherDevice(DeviceId newDeviceId);
 
@@ -50,15 +53,21 @@ public class SelectDeviceTinyView extends Composite implements HasEnabled {
             UiBinder<Widget, SelectDeviceTinyView> {
     }
 
+    /**
+     * An item that represents the fact that no Device is selected with the
+     * {@link #deviceCombo}
+     */
+    private static final String NO_DEVICE_COMBO_ITEM = "";
+
     private static SelectDeviceTinyViewUiBinder uiBinder = GWT
             .create(SelectDeviceTinyViewUiBinder.class);
-
     /**
      * The name is the friendly Device name as per {@link Device#deviceName},
      * the value is the ID as per {@link Device#deviceId}
      */
     @UiField
     ListBox deviceCombo;
+
     private final Presenter presenter;
 
     @UiField
@@ -92,14 +101,10 @@ public class SelectDeviceTinyView extends Composite implements HasEnabled {
             index++;
         }
         this.deviceCombo.addItem(NO_DEVICE_COMBO_ITEM);
-        if (currentlySelected == null) {
+        if (currentlySelected == null)
             this.deviceCombo.setSelectedIndex(index);
-        }
     }
 
-    /** An item that represents the fact that no Device is selected with the {@link #deviceCombo} */
-    private static final String NO_DEVICE_COMBO_ITEM = "";
-    
     /**
      * @return The {@link DeviceId} of the currently selected device, null if
      *         none.

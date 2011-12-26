@@ -16,70 +16,71 @@
  */
 package net.vleu.par.gwt.client.activities;
 
+import net.vleu.par.protocolbuffer.StatusBarNotificationData;
+
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
-import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Composite;
-import com.google.gwt.user.client.ui.HasText;
+import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
 
 /**
- *
+ * A view that allows the use to create and send a
+ * {@link StatusBarNotificationData}
  */
-public class CreateStatusBarNotificationView extends Composite implements
-        HasText {
-
-    private static CreateStatusBarNotificationViewUiBinder uiBinder = GWT
-            .create(CreateStatusBarNotificationViewUiBinder.class);
+public class CreateStatusBarNotificationView extends Composite {
 
     interface CreateStatusBarNotificationViewUiBinder extends
             UiBinder<Widget, CreateStatusBarNotificationView> {
     }
 
     /**
-     * Because this class has a default constructor, it can
-     * be used as a binder template. In other words, it can be used in other
-     * *.ui.xml files as follows:
-     * <ui:UiBinder xmlns:ui="urn:ui:com.google.gwt.uibinder"
-     *   xmlns:g="urn:import:**user's package**">
-     *  <g:**UserClassName**>Hello!</g:**UserClassName>
-     * </ui:UiBinder>
-     * Note that depending on the widget that is used, it may be necessary to
-     * implement HasHTML instead of HasText.
+     * A presenter (in the MVP sense) for
+     * {@link CreateStatusBarNotificationView}
      */
-    public CreateStatusBarNotificationView() {
-        initWidget(uiBinder.createAndBindUi(this));
+    public static interface Presenter {
+        /**
+         * Called with the directive to transmit when the user asks for a such
+         * transmission
+         * 
+         * @param proto
+         *            The data to transmit
+         */
+        public void send(StatusBarNotificationData proto);
     }
+
+    private static CreateStatusBarNotificationViewUiBinder uiBinder = GWT
+            .create(CreateStatusBarNotificationViewUiBinder.class);
+
+    private final Presenter presenter;
 
     @UiField
-    Button button;
+    Button sendButton;
 
-    public CreateStatusBarNotificationView(String firstName) {
+    @UiField
+    TextBox textBox;
+    @UiField
+    TextBox titleBox;
+
+    public CreateStatusBarNotificationView(final Presenter presenter) {
         initWidget(uiBinder.createAndBindUi(this));
-
-        // Can access @UiField after calling createAndBindUi
-        button.setText(firstName);
+        this.presenter = presenter;
     }
 
-    @UiHandler("button")
-    void onClick(ClickEvent e) {
-        Window.alert("Hello!");
+    @UiHandler("sendButton")
+    void onClick(final ClickEvent e) {
+        final String text = this.textBox.getText();
+        final String title = this.titleBox.getText();
+        final StatusBarNotificationData notification =
+                StatusBarNotificationData.create();
+        if (text.length() > 0)
+            notification.setText(text);
+        if (title.length() > 0)
+            notification.setTitle(title);
+        this.presenter.send(notification);
     }
-
-    public void setText(String text) {
-        button.setText(text);
-    }
-
-    /**
-     * Gets invoked when the default constructor is called
-     * and a string is provided in the ui.xml file.
-     */
-    public String getText() {
-        return button.getText();
-    }
-
 }
