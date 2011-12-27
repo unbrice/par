@@ -365,7 +365,7 @@ final class Syncer {
      *            The C2DM token registered the last time the account was synced
      */
     private void setLastSentC2dmToken(final C2dmToken token) {
-        // TODO: Use apply
+        // TODO(unbrice): Use apply (Android >3.0)
         getSyncMetadata().edit()
                 .putString(this.keyForLastC2dmTokenKey, token.value).commit();
     }
@@ -375,7 +375,7 @@ final class Syncer {
      */
     private void setLastSyncTimeToNow() {
         final long timeStampMs = System.currentTimeMillis();
-        // TODO: Use apply
+        // TODO(unbrice): Use apply (Android >3.0)
         getSyncMetadata().edit().putLong(this.keyForLastSyncMs, timeStampMs)
                 .commit();
     }

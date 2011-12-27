@@ -145,7 +145,7 @@ public final class Preferences {
      * Called by {@link #sharedPreferencesListener}
      */
     protected void setLastUpdateTimeToNow() {
-        // TODO: Use apply
+        // TODO(unbrice): Use apply (Android >3.0)
         this.privatePrefs
                 .edit()
                 .putLong(KEY_LAST_UPDATE_TIMESTAMP_MS,
