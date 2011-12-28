@@ -24,6 +24,7 @@ import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
 
+import net.vleu.par.ClientLoginToken;
 import net.vleu.par.gateway.datastore.DeviceEntity;
 import net.vleu.par.gateway.datastore.DeviceEntityTest;
 import net.vleu.par.gateway.tests.ThreadGlobal;
@@ -53,23 +54,24 @@ import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 @RunWith(MockitoJUnitRunner.class)
 public class DeviceWakerTest {
 
+    private static ClientLoginToken DUMMY_C2DM_AUTH_TOKEN =
+            new ClientLoginToken("DUMMY_C2DM_AUTH_TOKEN");
     private static final UserId USER_ID = UserId.fromGoogleAuthId("dummyUser");
     @Mock
     private DatastoreService datastoreService;
+
     private final LocalServiceTestHelper helper = new LocalServiceTestHelper(
             new LocalDatastoreServiceTestConfig().setStoreDelayMs(0));
-
     @Mock
     private Queue taskQueue;
+
     @Mock
     private URLFetchService urlFetchService;
 
     private DeviceWaker newDeviceWakerUsingMocks() {
-        return new DeviceWaker(
-                new ThreadGlobal<DatastoreService>(
-                        this.datastoreService), new C2dmRequestFactory(""),
-                this.taskQueue,
-                new ThreadGlobal<URLFetchService>(
+        return new DeviceWaker(new ThreadGlobal<DatastoreService>(
+                this.datastoreService), new C2dmRequestFactory(),
+                this.taskQueue, new ThreadGlobal<URLFetchService>(
                         this.urlFetchService));
     }
 
@@ -117,7 +119,8 @@ public class DeviceWakerTest {
                 mockedHttpResponse);
         stub(mockedHttpResponse.getResponseCode()).toReturn(404);
         final DeviceWaker tested = newDeviceWakerUsingMocks();
-        tested.reallyWake(USER_ID, DeviceEntityTest.DUMMY_DEVICE_ID);
+        tested.reallyWake(DUMMY_C2DM_AUTH_TOKEN, USER_ID,
+                DeviceEntityTest.DUMMY_DEVICE_ID);
     }
 
     /**
@@ -143,8 +146,8 @@ public class DeviceWakerTest {
                 mockedHttpResponse);
         stub(mockedHttpResponse.getResponseCode()).toReturn(200);
         final DeviceWaker tested = newDeviceWakerUsingMocks();
-        tested.reallyWake(USER_ID, DeviceEntityTest.DUMMY_DEVICE_ID);
-
+        tested.reallyWake(DUMMY_C2DM_AUTH_TOKEN, USER_ID,
+                DeviceEntityTest.DUMMY_DEVICE_ID);
     }
 
 }

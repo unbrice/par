@@ -18,12 +18,14 @@
 package net.vleu.par.gateway;
 
 import java.io.IOException;
+import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import net.jcip.annotations.ThreadSafe;
+import net.vleu.par.ClientLoginToken;
 import net.vleu.par.models.DeviceId;
 import net.vleu.par.models.UserId;
 
@@ -39,26 +41,34 @@ public class DeviceWakerServlet extends HttpServlet {
     public static final String APPENGINE_QUEUE_NAME = "deviceWakerQueue";
     /** Name of the HTTP parameter containing the Device ID */
     public static final String DEVICE_ID_HTTP_PARAM = "deviceId";
+    private static final Logger LOG = Logger.getLogger(DeviceWakerServlet.class
+            .getName());
     /**
      * Name of the HTTP parameter containing the User ID as a Base64 URL string
      */
     public static final String USER_ID_HTTP_PARAM = "userId";
+
     private final DeviceWaker deviceWaker;
 
+    private final ServletHelper servletHelper;
+
     public DeviceWakerServlet() {
-        this(new DeviceWaker());
+        this(new DeviceWaker(), new ServletHelper());
     }
 
     /** Allows for injecting the private fields, for testing purposes */
-    DeviceWakerServlet(final DeviceWaker deviceWaker) {
+    DeviceWakerServlet(final DeviceWaker deviceWaker,
+            final ServletHelper servletHelper) {
         this.deviceWaker = deviceWaker;
+        this.servletHelper = servletHelper;
     }
 
     /** @inherit */
     // TODO: Switch to ProtoRPC
     @Override
-    public void doGet(final HttpServletRequest req,
+    public void doPost(final HttpServletRequest req,
             final HttpServletResponse resp) throws IOException {
+        final ServerConfiguration config;
         final DeviceId deviceId;
         final UserId userId;
         final String deviceIdStr = req.getParameter(DEVICE_ID_HTTP_PARAM);
@@ -68,16 +78,19 @@ public class DeviceWakerServlet extends HttpServlet {
         if (deviceIdStr == null) {
             resp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS, "No "
                 + DEVICE_ID_HTTP_PARAM + " parameter");
+            LOG.severe("No " + DEVICE_ID_HTTP_PARAM + " parameter");
             return;
         }
         else if (stringUserId == null) {
             resp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS, "No "
                 + USER_ID_HTTP_PARAM + " parameter");
+            LOG.severe("No " + USER_ID_HTTP_PARAM + " parameter");
             return;
         }
         else if (req.getHeader("X-AppEngine-QueueName") == null) {
             resp.sendError(HttpCodes.HTTP_FORBIDDEN_STATUS,
                     "Requests must be made through a Queue");
+            LOG.severe("No X-AppEngine-QueueName parameter");
             return;
         }
 
@@ -87,16 +100,33 @@ public class DeviceWakerServlet extends HttpServlet {
         else {
             resp.sendError(HttpCodes.HTTP_BAD_REQUEST_STATUS, "Invalid "
                 + DEVICE_ID_HTTP_PARAM);
+
+            LOG.severe("Invalid " + DEVICE_ID_HTTP_PARAM);
             return;
         }
         userId = UserId.fromGoogleAuthId(stringUserId);
+        config = this.servletHelper.readServerConfiguration();
         try {
-            this.deviceWaker.reallyWake(userId, deviceId);
+            final ClientLoginToken c2dmAuthToken = config.getC2dmAuthToken();
+            final ClientLoginToken updatedC2dmAuthToken =
+                    this.deviceWaker
+                            .reallyWake(c2dmAuthToken, userId, deviceId);
+            if (updatedC2dmAuthToken != null && !c2dmAuthToken.equals(updatedC2dmAuthToken)) {
+                LOG.info("Got updated auth token from C2DM servers: "
+                    + updatedC2dmAuthToken);
+                config.setC2dmCAuthToken(updatedC2dmAuthToken);
+                this.servletHelper.persistServerConfiguration(config);
+            }
         }
         catch (final EntityNotFoundException e) {
             resp.sendError(HttpCodes.HTTP_GONE_STATUS, "Unknown device: "
                 + deviceIdStr);
+            LOG.severe("Unknown device: " + deviceIdStr);
             return;
+        }
+        catch (final RuntimeException e) {
+            LOG.severe("Failed waking the device: " + e.toString());
+            throw e;
         }
         resp.setContentType("text/plain");
         resp.getWriter().println("Done.");

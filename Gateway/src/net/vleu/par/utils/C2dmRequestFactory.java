@@ -16,8 +16,6 @@
  */
 package net.vleu.par.utils;
 
-import static com.google.appengine.api.urlfetch.FetchOptions.Builder.validateCertificate;
-
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
@@ -25,6 +23,7 @@ import java.net.URL;
 
 import net.jcip.annotations.ThreadSafe;
 import net.vleu.par.C2dmToken;
+import net.vleu.par.ClientLoginToken;
 
 import com.google.appengine.api.urlfetch.HTTPHeader;
 import com.google.appengine.api.urlfetch.HTTPMethod;
@@ -52,7 +51,7 @@ public class C2dmRequestFactory {
     /* Initializes URL */
     static {
         try {
-            URL = new URL("https://android.clients.google.com/c2dm/send");
+            URL = new URL("https://android.apis.google.com/c2dm/send");
         }
         catch (final MalformedURLException e) {
             /* This cannot happen because the URL text is hardcoded */
@@ -70,21 +69,19 @@ public class C2dmRequestFactory {
         return postDataBuilder.toString().getBytes(UTF8);
     }
 
-    /** A HTTPHeader with the authorization token */
-    private final HTTPHeader authTokenHTTPHeader;
-
-    public C2dmRequestFactory(final String authToken) {
-        this.authTokenHTTPHeader =
-                new HTTPHeader("Authorization", "GoogleLogin auth=" + authToken);
+    public C2dmRequestFactory() {
     }
 
-    public HTTPRequest buildRequest(final C2dmToken registrationId)
+    public HTTPRequest buildRequest(final ClientLoginToken clientLoginToken, final C2dmToken registrationId)
             throws IOException {
-        final HTTPRequest request =
-                new HTTPRequest(URL, HTTPMethod.POST, validateCertificate());
+        // TODO: add ", validateCertificate()", right now it triggers an
+        // exception
+        final HTTPRequest request = new HTTPRequest(URL, HTTPMethod.POST);
+        final HTTPHeader authTokenHTTPHeader =
+                new HTTPHeader("Authorization", "GoogleLogin auth=" + clientLoginToken.value);
         final byte[] postData = buildPostData(registrationId);
         request.setHeader(CONTENT_TYPE_HTTPHEADER);
-        request.setHeader(this.authTokenHTTPHeader);
+        request.setHeader(authTokenHTTPHeader);
         request.setHeader(new HTTPHeader("Content-Length", Integer
                 .toString(postData.length)));
         request.setPayload(postData);
