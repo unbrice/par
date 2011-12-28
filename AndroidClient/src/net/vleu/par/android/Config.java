@@ -25,7 +25,7 @@ public class Config extends net.vleu.par.Config {
     public static final String C2DM_ACCOUNT_EXTRA = "account_name";
     public static final String C2DM_MESSAGE_EXTRA = "message";
     public static final String C2DM_MESSAGE_SYNC = "sync";
-    public static final String C2DM_SENDER = "brice.arnould@gmail.com";
+    public static final String C2DM_SENDER = "c2dm@vleu.net";
     /**
      * Enabling this is will turn on sync UI icons that notify the user of
      * pending and active sync status. This is useful for debugging, but
