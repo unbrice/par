@@ -25,6 +25,11 @@ import biz.source_code.base64Coder.Base64UrlCoder;
 
 public final class DeviceId extends WrappedString implements
         Comparable<DeviceId> {
+    /*
+     * Currently, the fact that the deviceId are Base64URL-encoded strings matching
+     * this regexp is important for the Gateway, because TaskNames created by the
+     * DeviceWaker must have this property and they include the DeviceId.
+     */
     private final static Pattern BASE64URL_WHITELIST = Pattern
             .compile("[a-zA-Z0-9\\-_]*");
     private static final int MAX_DEVICE_ID_LEN = 48;

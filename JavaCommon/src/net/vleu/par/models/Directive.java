@@ -109,17 +109,27 @@ public final class Directive {
         }
     }
 
+    /**
+     * Parses a byte array containing a {@link DirectiveData} protocol buffer,
+     * and returns a {@link Directive} representing those parsed data. The
+     * protocol buffer is assumed to be valid and won't be checked.
+     * 
+     * @param data
+     *            The protocol buffer as a byte array, assumed to be valid.
+     * @return The data argument, parsed
+     * @throws InvalidDirectiveSerialisation
+     *             If data is not a vlid protocol buffer
+     */
     public static Directive fromProtocolBuffer(final byte[] data)
             throws InvalidDirectiveSerialisation {
-        Directive res;
+        final Directive res;
         try {
             res = new Directive(DirectiveData.parseFrom(data));
         }
         catch (final InvalidProtocolBufferException e) {
             throw new InvalidDirectiveSerialisation(
-                    "Protocol Buffer does not parse", e);
+                    "Protocol Buffer cannot parse", e);
         }
-        // TODO: Check it is valid
         return res;
     }
 
