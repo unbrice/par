@@ -25,6 +25,7 @@ import static org.mockito.Mockito.verify;
 import java.io.IOException;
 
 import net.vleu.par.ClientLoginToken;
+import net.vleu.par.gateway.DeviceWaker.InvalidC2dmClientLoginToken;
 import net.vleu.par.gateway.datastore.DeviceEntity;
 import net.vleu.par.gateway.datastore.DeviceEntityTest;
 import net.vleu.par.gateway.tests.ThreadGlobal;
@@ -103,10 +104,12 @@ public class DeviceWakerTest {
      *             Test failed
      * @throws EntityNotFoundException
      *             Test failed
+     * @throws InvalidC2dmClientLoginToken
+     *             Test failed
      */
     @Test(expected = IOException.class)
     public void testReallyWakeFailure() throws EntityNotFoundException,
-            IOException {
+            IOException, InvalidC2dmClientLoginToken {
         final Key dummyDeviceKey =
                 DeviceEntity.keyForIds(USER_ID,
                         DeviceEntityTest.DUMMY_DEVICE_ID);
@@ -130,10 +133,12 @@ public class DeviceWakerTest {
      *             Test failed
      * @throws EntityNotFoundException
      *             Test failed
+     * @throws InvalidC2dmClientLoginToken
+     *             Test failed
      */
     @Test
     public void testReallyWakeSuccess() throws EntityNotFoundException,
-            IOException {
+            IOException, InvalidC2dmClientLoginToken {
         final Key dummyDeviceKey =
                 DeviceEntity.keyForIds(USER_ID,
                         DeviceEntityTest.DUMMY_DEVICE_ID);

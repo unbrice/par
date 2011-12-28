@@ -26,6 +26,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import net.jcip.annotations.ThreadSafe;
 import net.vleu.par.ClientLoginToken;
+import net.vleu.par.gateway.DeviceWaker.InvalidC2dmClientLoginToken;
 import net.vleu.par.models.DeviceId;
 import net.vleu.par.models.UserId;
 
@@ -48,6 +49,22 @@ public class DeviceWakerServlet extends HttpServlet {
      */
     public static final String USER_ID_HTTP_PARAM = "userId";
 
+    /**
+     * A cached C2DM authentication token. <br>
+     * It will be refreshed from the {@link #servletHelper} (
+     * {@link ServletHelper#readServerConfiguration()}) when rejected by C2DM
+     * server, thus handling the case where another node gets the updated value. <br>
+     * May be null if there is no cached value. All accesses should be done
+     * through {@link #getC2dmAuthToken()},
+     * {@link #setC2dmAuthToken(ClientLoginToken)} and
+     * {@link #resetCachedC2dmAuthToken()}
+     * 
+     * @see DeviceWakerServlet#getC2dmAuthToken()
+     * @see DeviceWakerServlet#setC2dmAuthToken(ClientLoginToken)
+     * @see DeviceWakerServlet#resetCachedC2dmAuthToken()
+     */
+    private volatile ClientLoginToken cachedC2dmAuthToken;
+
     private final DeviceWaker deviceWaker;
 
     private final ServletHelper servletHelper;
@@ -68,7 +85,6 @@ public class DeviceWakerServlet extends HttpServlet {
     @Override
     public void doPost(final HttpServletRequest req,
             final HttpServletResponse resp) throws IOException {
-        final ServerConfiguration config;
         final DeviceId deviceId;
         final UserId userId;
         final String deviceIdStr = req.getParameter(DEVICE_ID_HTTP_PARAM);
@@ -105,23 +121,29 @@ public class DeviceWakerServlet extends HttpServlet {
             return;
         }
         userId = UserId.fromGoogleAuthId(stringUserId);
-        config = this.servletHelper.readServerConfiguration();
         try {
-            final ClientLoginToken c2dmAuthToken = config.getC2dmAuthToken();
             final ClientLoginToken updatedC2dmAuthToken =
-                    this.deviceWaker
-                            .reallyWake(c2dmAuthToken, userId, deviceId);
-            if (updatedC2dmAuthToken != null && !c2dmAuthToken.equals(updatedC2dmAuthToken)) {
+                    this.deviceWaker.reallyWake(getC2dmAuthToken(), userId,
+                            deviceId);
+            if (updatedC2dmAuthToken != null
+                && !getC2dmAuthToken().equals(updatedC2dmAuthToken)) {
                 LOG.info("Got updated auth token from C2DM servers: "
                     + updatedC2dmAuthToken);
-                config.setC2dmCAuthToken(updatedC2dmAuthToken);
-                this.servletHelper.persistServerConfiguration(config);
+                setC2dmAuthToken(updatedC2dmAuthToken);
             }
         }
         catch (final EntityNotFoundException e) {
+            LOG.severe("Unknown device: " + deviceIdStr);
             resp.sendError(HttpCodes.HTTP_GONE_STATUS, "Unknown device: "
                 + deviceIdStr);
-            LOG.severe("Unknown device: " + deviceIdStr);
+            return;
+        }
+        catch (final InvalidC2dmClientLoginToken e) {
+            // This handles the case where another server refreshes the token
+            LOG.warning("Cached value of the C2DM auth token is invalid. Forcing a refresh.");
+            resetCachedC2dmAuthToken();
+            // GAE task queue will retry later
+            resp.sendError(HttpCodes.HTTP_INTERNAL_ERROR_STATUS);
             return;
         }
         catch (final RuntimeException e) {
@@ -136,5 +158,44 @@ public class DeviceWakerServlet extends HttpServlet {
         // to add two tasks, the second being anonymous and in charge for
         // checking that either the first is planned or that there are no
         // longer any items to deliver
+    }
+
+    /**
+     * @return {@link #cachedC2dmAuthToken} if not null, else reads it from
+     *         {@link ServletHelper#readServerConfiguration() it} and refreshes
+     *         the cached copy
+     */
+    private ClientLoginToken getC2dmAuthToken() {
+        ClientLoginToken res = this.cachedC2dmAuthToken;
+        if (res == null) {
+            final ServerConfiguration config =
+                    this.servletHelper.readServerConfiguration();
+            res = config.getC2dmAuthToken();
+            this.cachedC2dmAuthToken = res;
+        }
+        return res;
+    }
+
+    /**
+     * Sets {@link #cachedC2dmAuthToken} to null, thus discarding the cached
+     * value
+     */
+    private void resetCachedC2dmAuthToken() {
+        this.cachedC2dmAuthToken = null;
+    }
+
+    /**
+     * Sets {@link #cachedC2dmAuthToken} and stores an updated configuration
+     * using
+     * {@link ServletHelper#persistServerConfiguration(ServerConfiguration)
+
+     */
+    private void setC2dmAuthToken(final ClientLoginToken newC2dmAuthToken) {
+        assert (newC2dmAuthToken != null);
+        this.cachedC2dmAuthToken = newC2dmAuthToken;
+        final ServerConfiguration config =
+                this.servletHelper.readServerConfiguration();
+        config.setC2dmCAuthToken(newC2dmAuthToken);
+        this.servletHelper.persistServerConfiguration(config);
     }
 }

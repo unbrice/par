@@ -59,8 +59,6 @@ class ServletHelper {
     private static final String MEMCACHE_SERVER_CONFIG_KEY =
             "ServerConfiguration-v0";
 
-    private volatile ServerConfiguration cachedServerConfiguration;
-
     /**
      * The GAE datastore from which to get the {@link ServerConfigurationEntity}
      * .
@@ -162,8 +160,6 @@ class ServletHelper {
         }
         /* Saves in the memcache */
         this.memcache.put(MEMCACHE_SERVER_CONFIG_KEY, entity);
-        /* Saves in local cache */
-        this.cachedServerConfiguration = config;
     }
 
     /**
@@ -171,10 +167,6 @@ class ServletHelper {
      *         {@link #persistServerConfiguration(ServerConfiguration)}
      */
     public ServerConfiguration readServerConfiguration() {
-
-        /* Searches in local cache */
-        if (this.cachedServerConfiguration != null)
-            return this.cachedServerConfiguration;
 
         /* Searches in the memcache */
         try {

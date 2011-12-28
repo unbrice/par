@@ -49,6 +49,19 @@ import com.google.appengine.api.urlfetch.URLFetchServiceFactory;
 public class DeviceWaker {
 
     /**
+     * Thrown by
+     * {@link DeviceWaker#reallyWake(ClientLoginToken, UserId, DeviceId)} when
+     * the authentication token is refused by the C2DM servers.
+     * 
+     * This might be the sign that a local copy of this token is no longer fresh
+     * enough
+     */
+    @SuppressWarnings("serial")
+    @ThreadSafe
+    public static class InvalidC2dmClientLoginToken extends Exception {
+    }
+
+    /**
      * If this header is set in an answer to a request to C2DM's server, the
      * associated value will become the new {@link ClientLoginToken}
      * 
@@ -150,9 +163,9 @@ public class DeviceWaker {
 
     /**
      * Helper function for
-     * {@link #reallyWake(ClientLoginToken, UserId, DeviceId)} It searches for a
-     * header called {@link #C2DM_UPDATE_AUTH_HEADER} in the answer, returns its
-     * value as a {@link ClientLoginToken}.
+     * {@link #reallyWake(ClientLoginToken, UserId, DeviceId)}. It searches for
+     * a header called {@value #C2DM_UPDATE_AUTH_HEADER} in the response and
+     * returns its value as a {@link ClientLoginToken}.
      * 
      * @param response
      *            C2DM's server response
@@ -186,10 +199,14 @@ public class DeviceWaker {
      * @return A new {@link ClientLoginToken} to use in subsequent requests, or
      *         null
      * @throws EntityNotFoundException
+     *             When the deviceId or userId are unknown
+     * @throws InvalidC2dmClientLoginToken
+     *             When the C2DM {@link ClientLoginToken} (c2dmAuthToken) is
+     *             invalid and needs to be refreshed
      */
     ClientLoginToken reallyWake(final ClientLoginToken c2dmAuthToken,
             final UserId ownerId, final DeviceId deviceId) throws IOException,
-            EntityNotFoundException {
+            EntityNotFoundException, InvalidC2dmClientLoginToken {
         final Key deviceKey = DeviceEntity.keyForIds(ownerId, deviceId);
         final Entity deviceEntity = this.datastores.get().get(null, deviceKey);
         final Device device = DeviceEntity.deviceFromEntity(deviceEntity);
@@ -204,6 +221,8 @@ public class DeviceWaker {
                     this.urlFetchService.get().fetch(request);
             if (response.getResponseCode() == 200)
                 return readNewAuthTokenFromC2dmResponse(response);
+            else if (response.getResponseCode() == 401)
+                throw new InvalidC2dmClientLoginToken();
             else
                 throw new IOException("The C2DM server anwsered a "
                     + response.getResponseCode() + " error.");
