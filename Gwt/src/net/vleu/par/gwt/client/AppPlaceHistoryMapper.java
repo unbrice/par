@@ -27,7 +27,8 @@ import com.google.gwt.place.shared.WithTokenizers;
 /**
  * Declares the {@link Place}s to the {@link PlaceHistoryHandler}
  */
-@WithTokenizers({CreateStatusBarNotificationPlace.Tokenizer.class, SelectDirectivePlace.Tokenizer.class})
+@WithTokenizers({ CreateStatusBarNotificationPlace.Tokenizer.class,
+        DefaultPlace.Tokenizer.class, SelectDirectivePlace.Tokenizer.class })
 public interface AppPlaceHistoryMapper extends PlaceHistoryMapper {
 
 }
